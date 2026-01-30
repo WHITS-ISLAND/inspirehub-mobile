@@ -16,5 +16,6 @@ data class Node(
     val authorId: String,
     val parentNodeId: String? = null, // 派生元ノード（派生アイデアの場合に設定）
     val tagIds: List<String> = emptyList(), // タグID一覧（Phase 2〜）
-    val createdAt: Instant
+    val createdAt: Instant,
+    val updatedAt: Instant
 )

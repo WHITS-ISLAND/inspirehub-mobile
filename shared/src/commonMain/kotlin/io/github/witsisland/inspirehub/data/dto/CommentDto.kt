@@ -1,0 +1,29 @@
+package io.github.witsisland.inspirehub.data.dto
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+/**
+ * API Comment レスポンス
+ */
+@Serializable
+data class CommentDto(
+    val id: String,
+    val content: String,
+    @SerialName("author_id")
+    val authorId: String,
+    @SerialName("author_name")
+    val authorName: String? = null,
+    @SerialName("author_picture")
+    val authorPicture: String? = null,
+    @SerialName("node_id")
+    val nodeId: String,
+    @SerialName("parent_id")
+    val parentId: String? = null,
+    val mentions: List<UserMentionDto> = emptyList(),
+    val replies: List<CommentDto> = emptyList(),
+    @SerialName("created_at")
+    val createdAt: String,
+    @SerialName("updated_at")
+    val updatedAt: String
+)

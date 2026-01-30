@@ -89,6 +89,20 @@ open iosApp/iosApp.xcodeproj
 
 **同期について**: 設計ドキュメントはGoogle Driveと同期管理。Serverチームが更新した場合はこのリポジトリに反映する（`/docs/README.md`参照）。
 
+## API仕様
+
+**API設計書**: https://api.inspirehub.wtnqk.org/docs
+
+- **ベースURL**: `http://localhost:8787`（開発環境）
+- **認証**: Google OAuth → JWT Bearer token
+- **主要エンドポイント**:
+  - 認証: `/auth/google/url`, `/auth/google/callback`, `/auth/me`
+  - ノード: `GET/POST /nodes`, `GET/PUT/DELETE /nodes/{id}`, `POST /nodes/{id}/like`
+  - コメント: `GET/POST /nodes/{nodeId}/comments`, `PUT/DELETE /comments/{id}`
+  - タグ: `GET /tags/popular`, `GET /tags/suggest`
+
+**重要**: ネットワーク層実装時は必ずAPI設計書を参照すること。
+
 ## 主要機能（Phase 1優先度）
 
 Phase 1で実装する機能：
