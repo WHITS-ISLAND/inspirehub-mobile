@@ -109,23 +109,35 @@ Phase 1で実装する機能：
 
 ## アーキテクチャ
 
+**詳細は`docs/architecture.md`を参照してください。**
+
+Phase 1で採用するアーキテクチャパターン: **MVVM + Store Pattern**
+
+```
+ViewModel (per-screen, disposable)
+  ├→ Store (memory state, singleton, concrete class)
+  └→ Repository (persistence, singleton, interface + impl)
+```
+
 ### モジュール依存関係
 ```
 composeApp → shared
 iosApp → shared (Shared.frameworkを経由)
 ```
 
+### 主要技術スタック
+- **State Management**: ViewModel + StateFlow
+- **DI**: Koin
+- **Network**: Ktor Client + Mock
+- **Persistence**: DataStore（Phase 1）
+- **ViewModel共有**: KMP-ObservableViewModel
+- **非同期処理**: KMP-NativeCoroutines
+
 ### プラットフォーム固有コードのパターン
 プラットフォーム固有の機能を追加する場合：
 1. `shared/commonMain`で`expect`宣言を定義
 2. `shared/androidMain`と`shared/iosMain`で`actual`実装を提供
 3. `composeApp`の共通UIコードから利用
-
-### ナビゲーション
-（実装予定 - アーキテクチャが確定したらこのセクションを更新）
-
-### 状態管理
-（実装予定 - アーキテクチャが確定したらこのセクションを更新）
 
 ## 開発フロー
 

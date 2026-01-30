@@ -1,0 +1,16 @@
+{
+  "enabledPlugins": {
+    "example-skills@anthropic-agent-skills": true
+  },
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:kmp.jetbrains.com)",
+      "Bash(find:*)",
+      "Bash(./gradlew:*)",
+      "WebFetch(domain:drive.google.com)",
+      "WebFetch(domain:zenn.dev)",
+      "WebSearch"
+    ]
+  }
+}
