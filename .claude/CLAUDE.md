@@ -180,7 +180,46 @@ iosApp → shared (Shared.frameworkを経由)
 
 ## テスト戦略
 
-（プロジェクトの成熟に合わせて定義予定 - テストインフラが確立したらこのセクションを更新）
+### ViewModelのテスト（必須）
+
+**重要**: ViewModelは必ず単体テストを書くこと。
+
+#### テスト実装パターン
+
+```kotlin
+// 1. MainDispatcherRuleを継承
+class MyViewModelTest : MainDispatcherRule() {
+
+    @BeforeTest
+    fun setup() {
+        // 2. Fake実装を使う（MockKは使わない）
+        fakeRepository = FakeMyRepository()
+        viewModel = MyViewModel(fakeRepository)
+    }
+
+    @Test
+    fun `テスト名 - 日本語で書ける`() = runTest {
+        // 3. runTestを使う
+        // 4. Given-When-Then パターン
+    }
+}
+```
+
+#### 重要な原則
+
+1. **MockKを使わない**: KMPではKotlin/Nativeで不安定。Fake実装を使う
+2. **MainDispatcherRule**: `shared/src/commonTest/kotlin/.../test/MainDispatcherRule.kt`を継承
+3. **viewModelScope.launch**: ViewModelで使う（Android公式推奨）。Repositoryはsuspend関数
+4. **StateFlowのテスト**: Turbineライブラリの`.test { }`を使用
+5. **テスト名**: バッククォートで日本語可（例: `` `logout - ログアウトが成功すること` ``）
+
+#### テストライブラリ
+
+- `kotlin.test`: 標準テストフレームワーク
+- `kotlinx-coroutines-test`: コルーチンテスト（runTest, MainDispatcher置換）
+- `turbine`: StateFlow/Flowのテスト
+
+参考: `AuthViewModelTest.kt`
 
 ## 用語集
 
