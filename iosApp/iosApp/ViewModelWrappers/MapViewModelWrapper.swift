@@ -20,9 +20,17 @@ class MapViewModelWrapper: ObservableObject {
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.nodes = self.viewModel.nodes.value as? [Node] ?? []
-                self.isLoading = self.viewModel.isLoading.value as! Bool
-                self.error = self.viewModel.error.value as? String
+
+                let newNodes = self.viewModel.nodes.value as? [Node] ?? []
+                if self.nodes.count != newNodes.count || self.nodes.map(\.id) != newNodes.map(\.id) {
+                    self.nodes = newNodes
+                }
+
+                let newIsLoading = self.viewModel.isLoading.value as! Bool
+                if self.isLoading != newIsLoading { self.isLoading = newIsLoading }
+
+                let newError = self.viewModel.error.value as? String
+                if self.error != newError { self.error = newError }
             }
             .store(in: &cancellables)
     }
