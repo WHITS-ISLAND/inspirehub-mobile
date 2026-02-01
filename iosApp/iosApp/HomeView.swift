@@ -95,9 +95,10 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(viewModel.nodes, id: \.id) { node in
-                    NodeCardView(node: node) {
-                        onNodeTap?(node)
+                    NavigationLink(destination: DetailView(nodeId: node.id)) {
+                        NodeCardView(node: node)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 16)
@@ -132,37 +133,33 @@ struct HomeView: View {
 
 struct NodeCardView: View {
     let node: Node
-    var onTap: (() -> Void)?
 
     var body: some View {
-        Button(action: { onTap?() }) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    nodeTypeBadge
-                    Spacer()
-                    Text(formatDate(node.createdAt))
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-
-                Text(node.title)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                Text(node.content)
-                    .font(.subheadline)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                nodeTypeBadge
+                Spacer()
+                Text(formatDate(node.createdAt))
+                    .font(.caption2)
                     .foregroundColor(.secondary)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground))
-            .cornerRadius(12)
+
+            Text(node.title)
+                .font(.headline)
+                .foregroundColor(.primary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+
+            Text(node.content)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
     }
 
     private var nodeTypeBadge: some View {
