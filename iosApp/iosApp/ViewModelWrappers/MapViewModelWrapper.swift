@@ -30,4 +30,8 @@ class MapViewModelWrapper: ObservableObject {
     func loadNodes() {
         viewModel.loadNodes()
     }
+
+    func getNodeTree() -> [NodeTreeItem] {
+        return viewModel.getNodeTree() as? [NodeTreeItem] ?? []
+    }
 }
