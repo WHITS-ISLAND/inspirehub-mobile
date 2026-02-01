@@ -24,13 +24,27 @@ class PostViewModelWrapper: ObservableObject {
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.title = self.viewModel.title.value as! String
-                self.content = self.viewModel.content.value as! String
-                self.tags = self.viewModel.tags.value as! [String]
-                self.parentNode = self.viewModel.parentNode.value as? Node
-                self.isSubmitting = self.viewModel.isSubmitting.value as! Bool
-                self.error = self.viewModel.error.value as? String
-                self.isSuccess = self.viewModel.isSuccess.value as! Bool
+
+                let newTitle = self.viewModel.title.value as! String
+                if self.title != newTitle { self.title = newTitle }
+
+                let newContent = self.viewModel.content.value as! String
+                if self.content != newContent { self.content = newContent }
+
+                let newTags = self.viewModel.tags.value as! [String]
+                if self.tags != newTags { self.tags = newTags }
+
+                let newParentNode = self.viewModel.parentNode.value as? Node
+                if self.parentNode?.id != newParentNode?.id { self.parentNode = newParentNode }
+
+                let newIsSubmitting = self.viewModel.isSubmitting.value as! Bool
+                if self.isSubmitting != newIsSubmitting { self.isSubmitting = newIsSubmitting }
+
+                let newError = self.viewModel.error.value as? String
+                if self.error != newError { self.error = newError }
+
+                let newIsSuccess = self.viewModel.isSuccess.value as! Bool
+                if self.isSuccess != newIsSuccess { self.isSuccess = newIsSuccess }
             }
             .store(in: &cancellables)
     }
@@ -41,6 +55,18 @@ class PostViewModelWrapper: ObservableObject {
 
     func updateContent(_ value: String) {
         viewModel.updateContent(value: value)
+    }
+
+    func addTag(_ tag: String) {
+        viewModel.addTag(tag: tag)
+    }
+
+    func removeTag(_ tag: String) {
+        viewModel.removeTag(tag: tag)
+    }
+
+    func setParentNode(_ node: Node?) {
+        viewModel.setParentNode(node: node)
     }
 
     func submitIssue() {
