@@ -21,10 +21,20 @@ class MyPageViewModelWrapper: ObservableObject {
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.currentUser = self.viewModel.currentUser.value as? User
-                self.myNodes = self.viewModel.myNodes.value as? [Node] ?? []
-                self.isLoading = self.viewModel.isLoading.value as! Bool
-                self.error = self.viewModel.error.value as? String
+
+                let newUser = self.viewModel.currentUser.value as? User
+                if self.currentUser?.id != newUser?.id { self.currentUser = newUser }
+
+                let newNodes = self.viewModel.myNodes.value as? [Node] ?? []
+                if self.myNodes.count != newNodes.count || self.myNodes.map(\.id) != newNodes.map(\.id) {
+                    self.myNodes = newNodes
+                }
+
+                let newIsLoading = self.viewModel.isLoading.value as! Bool
+                if self.isLoading != newIsLoading { self.isLoading = newIsLoading }
+
+                let newError = self.viewModel.error.value as? String
+                if self.error != newError { self.error = newError }
             }
             .store(in: &cancellables)
     }
