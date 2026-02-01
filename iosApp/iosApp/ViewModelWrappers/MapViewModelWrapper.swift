@@ -21,7 +21,12 @@ class MapViewModelWrapper: ObservableObject {
             .sink { [weak self] _ in
                 guard let self = self else { return }
 
-                let newNodes = self.viewModel.nodes.value as? [Node] ?? []
+                let newNodes: [Node]
+                if let arr = self.viewModel.nodes.value as? NSArray {
+                    newNodes = arr.compactMap { $0 as? Node }
+                } else {
+                    newNodes = self.viewModel.nodes.value as? [Node] ?? []
+                }
                 if self.nodes.count != newNodes.count || self.nodes.map(\.id) != newNodes.map(\.id) {
                     self.nodes = newNodes
                 }

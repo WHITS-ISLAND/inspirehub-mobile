@@ -25,7 +25,12 @@ class MyPageViewModelWrapper: ObservableObject {
                 let newUser = self.viewModel.currentUser.value as? User
                 if self.currentUser?.id != newUser?.id { self.currentUser = newUser }
 
-                let newNodes = self.viewModel.myNodes.value as? [Node] ?? []
+                let newNodes: [Node]
+                if let arr = self.viewModel.myNodes.value as? NSArray {
+                    newNodes = arr.compactMap { $0 as? Node }
+                } else {
+                    newNodes = self.viewModel.myNodes.value as? [Node] ?? []
+                }
                 if self.myNodes.count != newNodes.count || self.myNodes.map(\.id) != newNodes.map(\.id) {
                     self.myNodes = newNodes
                 }
