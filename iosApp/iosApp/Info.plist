@@ -4,5 +4,22 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+
+	<!-- Google Sign-In Configuration -->
+	<key>GIDClientID</key>
+	<string>605273458355-9c4cvk0o5nhpdrkknj4m98voh712enr9.apps.googleusercontent.com</string>
+
+	<!-- URL Scheme for Google Sign-In callback -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.605273458355-9c4cvk0o5nhpdrkknj4m98voh712enr9</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

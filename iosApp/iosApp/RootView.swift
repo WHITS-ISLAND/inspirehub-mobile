@@ -8,7 +8,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if viewModel.isAuthenticated {
-                HomeView()
+                MainTabView()
             } else {
                 LoginView(viewModel: viewModel)
             }
@@ -64,5 +64,13 @@ class AuthViewModelWrapper: ObservableObject {
 
     func clearError() {
         viewModel.clearError()
+    }
+
+    func mockLogin() {
+        viewModel.mockLogin()
+    }
+
+    func verifyGoogleToken(idToken: String) {
+        viewModel.verifyGoogleToken(idToken: idToken)
     }
 }

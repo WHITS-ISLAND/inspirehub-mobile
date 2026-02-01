@@ -2,78 +2,191 @@ import SwiftUI
 import Shared
 
 struct HomeView: View {
-    @StateObject private var viewModel = AuthViewModelWrapper()
+    @StateObject var viewModel = HomeViewModelWrapper()
+    var onNodeTap: ((Node) -> Void)?
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 24) {
-                // ユーザー情報表示
-                if let user = viewModel.currentUser {
-                    VStack(spacing: 8) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.blue)
+            VStack(spacing: 0) {
+                // Upper tab bar
+                tabBar
 
-                        Text(user.handle)
-                            .font(.title2)
-                            .fontWeight(.bold)
-
-                        if let roleTag = user.roleTag {
-                            Text(roleTag)
-                                .font(.caption)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 4)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(8)
-                        }
-                    }
-                    .padding(.top, 40)
-                }
-
-                Spacer()
-
-                // 仮の画面説明
-                VStack(spacing: 16) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.green)
-
-                    Text("ログイン成功！")
-                        .font(.title)
-                        .fontWeight(.bold)
-
-                    Text("ホーム画面は今後実装予定です")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-
-                // ログアウトボタン
-                Button(action: {
-                    viewModel.logout()
-                }) {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("ログアウト")
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.red)
-                    .cornerRadius(12)
-                }
-                .disabled(viewModel.isLoading)
-                .padding(.horizontal, 32)
-
-                if viewModel.isLoading {
+                // Content
+                if viewModel.isLoading && viewModel.nodes.isEmpty {
+                    Spacer()
                     ProgressView()
-                        .padding(.top, 8)
+                    Spacer()
+                } else if let error = viewModel.error, viewModel.nodes.isEmpty {
+                    Spacer()
+                    errorView(error)
+                    Spacer()
+                } else {
+                    nodeList
                 }
             }
             .navigationTitle("InspireHub")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    sortMenu
+                }
+            }
+            .onAppear {
+                viewModel.loadNodes()
+            }
         }
+    }
+
+    // MARK: - Tab Bar
+
+    private var tabBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(HomeTabUI.allCases, id: \.self) { tab in
+                    Button(action: {
+                        viewModel.setTab(tab)
+                    }) {
+                        VStack(spacing: 6) {
+                            Text(tab.rawValue)
+                                .font(.subheadline)
+                                .fontWeight(viewModel.currentTab == tab ? .bold : .regular)
+                                .foregroundColor(viewModel.currentTab == tab ? .primary : .secondary)
+
+                            Rectangle()
+                                .fill(viewModel.currentTab == tab ? Color.blue : Color.clear)
+                                .frame(height: 2)
+                        }
+                    }
+                    .frame(minWidth: 70)
+                    .padding(.horizontal, 8)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .padding(.top, 4)
+        .background(Color(.systemBackground))
+    }
+
+    // MARK: - Sort Menu
+
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOrderUI.allCases, id: \.self) { order in
+                Button(action: {
+                    viewModel.setSortOrder(order)
+                }) {
+                    HStack {
+                        Text(order.rawValue)
+                        if viewModel.sortOrder == order {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .foregroundColor(.primary)
+        }
+    }
+
+    // MARK: - Node List
+
+    private var nodeList: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.nodes, id: \.id) { node in
+                    NodeCardView(node: node) {
+                        onNodeTap?(node)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+        }
+        .refreshable {
+            viewModel.refresh()
+        }
+    }
+
+    // MARK: - Error View
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 40))
+                .foregroundColor(.secondary)
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            Button("再読み込み") {
+                viewModel.loadNodes()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+    }
+}
+
+// MARK: - Node Card
+
+struct NodeCardView: View {
+    let node: Node
+    var onTap: (() -> Void)?
+
+    var body: some View {
+        Button(action: { onTap?() }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    nodeTypeBadge
+                    Spacer()
+                    Text(formatDate(node.createdAt))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                Text(node.title)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                Text(node.content)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var nodeTypeBadge: some View {
+        let isIssue = node.type == .issue
+        return HStack(spacing: 4) {
+            Image(systemName: isIssue ? "exclamationmark.triangle.fill" : "lightbulb.fill")
+                .font(.caption2)
+            Text(isIssue ? "課題" : "アイデア")
+                .font(.caption2)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(isIssue ? Color.orange.opacity(0.15) : Color.yellow.opacity(0.15))
+        .foregroundColor(isIssue ? .orange : .yellow)
+        .cornerRadius(6)
+    }
+
+    private func formatDate(_ instant: Kotlinx_datetimeInstant) -> String {
+        let seconds = instant.epochSeconds
+        let date = Date(timeIntervalSince1970: TimeInterval(seconds))
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }

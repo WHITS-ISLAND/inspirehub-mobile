@@ -104,4 +104,35 @@ class AuthViewModel(
     fun clearError() {
         error.value = null
     }
+
+    /**
+     * モックログイン（DEBUG用）
+     * Google OAuth未設定時にモックユーザーで認証をバイパス
+     */
+    fun mockLogin() {
+        val mockUser = User(
+            id = "mock_user_1",
+            handle = "テストユーザー",
+            roleTag = "Engineer",
+            createdAt = kotlinx.datetime.Clock.System.now()
+        )
+        userStore.login(mockUser, "mock_access_token", "mock_refresh_token")
+    }
+
+    /**
+     * Google ID Tokenを検証してログイン（SDK方式）
+     */
+    fun verifyGoogleToken(idToken: String) {
+        viewModelScope.launch {
+            isLoading.value = true
+            error.value = null
+
+            val result = authRepository.verifyGoogleToken(idToken)
+            if (result.isFailure) {
+                error.value = result.exceptionOrNull()?.message ?: "Token verification failed"
+            }
+
+            isLoading.value = false
+        }
+    }
 }

@@ -1,9 +1,9 @@
 import SwiftUI
-import SafariServices
+import GoogleSignIn
+import GoogleSignInSwift
 
 struct LoginView: View {
     @ObservedObject var viewModel: AuthViewModelWrapper
-    @State private var showingSafari = false
 
     var body: some View {
         VStack(spacing: 32) {
@@ -26,10 +26,8 @@ struct LoginView: View {
 
             Spacer()
 
-            // ログインボタン
-            Button(action: {
-                viewModel.getGoogleAuthUrl()
-            }) {
+            // Googleログインボタン（SDK版）
+            Button(action: handleGoogleSignIn) {
                 HStack {
                     Image(systemName: "g.circle.fill")
                     Text("Googleでログイン")
@@ -61,72 +59,44 @@ struct LoginView: View {
 
             Spacer()
         }
-        .onChange(of: viewModel.authUrl) { newValue in
-            if let urlString = newValue, let url = URL(string: urlString) {
-                showingSafari = true
+    }
+
+    private func handleGoogleSignIn() {
+        #if DEBUG
+        // Phase1: モック認証（Google OAuth未設定のため）
+        viewModel.mockLogin()
+        return
+        #endif
+
+        // === 以下は本来のGoogle Sign-In処理（そのまま残す） ===
+        print("=== Google Sign-In Started ===")
+
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            print("Error: Could not find root view controller")
+            return
+        }
+
+        GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
+            if let error = error {
+                print("Google Sign-In Error: \(error.localizedDescription)")
+                viewModel.error = error.localizedDescription
+                return
             }
-        }
-        .sheet(isPresented: $showingSafari) {
-            if let urlString = viewModel.authUrl, let url = URL(string: urlString) {
-                SafariView(url: url) { result in
-                    handleAuthCallback(result: result)
-                }
+
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString else {
+                print("Error: Could not get ID token")
+                viewModel.error = "認証情報の取得に失敗しました"
+                return
             }
-        }
-    }
 
-    private func handleAuthCallback(result: Result<URL, Error>) {
-        showingSafari = false
+            print("=== Google Sign-In Success ===")
+            print("ID Token: \(idToken.prefix(20))...")
+            print("User Email: \(user.profile?.email ?? "unknown")")
 
-        switch result {
-        case .success(let callbackURL):
-            // URLから認可コードを抽出
-            if let code = extractAuthCode(from: callbackURL) {
-                viewModel.loginWithAuthCode(code: code)
-            }
-        case .failure(let error):
-            print("Safari error: \(error)")
-        }
-    }
-
-    private func extractAuthCode(from url: URL) -> String? {
-        // URL例: yourapp://auth/callback?code=XXXXX
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let queryItems = components.queryItems else {
-            return nil
-        }
-
-        return queryItems.first(where: { $0.name == "code" })?.value
-    }
-}
-
-// SafariViewControllerをSwiftUIで使うためのラッパー
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-    let onDismiss: (Result<URL, Error>) -> Void
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        let safari = SFSafariViewController(url: url)
-        safari.delegate = context.coordinator
-        return safari
-    }
-
-    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onDismiss: onDismiss)
-    }
-
-    class Coordinator: NSObject, SFSafariViewControllerDelegate {
-        let onDismiss: (Result<URL, Error>) -> Void
-
-        init(onDismiss: @escaping (Result<URL, Error>) -> Void) {
-            self.onDismiss = onDismiss
-        }
-
-        func safariViewControllerDidFinish(_ controller: SFSafariViewController) {
-            // ユーザーがキャンセルした場合
-            onDismiss(.failure(NSError(domain: "SafariView", code: -1, userInfo: [NSLocalizedDescriptionKey: "User cancelled"])))
+            // ViewModelでID tokenをバックエンドに送信
+            viewModel.verifyGoogleToken(idToken: idToken)
         }
     }
 }

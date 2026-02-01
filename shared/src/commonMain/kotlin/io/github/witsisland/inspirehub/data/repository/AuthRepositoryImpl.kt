@@ -88,4 +88,22 @@ class AuthRepositoryImpl(
             Result.failure(e)
         }
     }
+
+    override suspend fun verifyGoogleToken(idToken: String): Result<User> {
+        return try {
+            val tokenResponse = authDataSource.verifyGoogleToken(idToken)
+            val user = tokenResponse.user.toDomain()
+
+            // UserStore にログイン状態を保存
+            userStore.login(
+                user = user,
+                accessToken = tokenResponse.accessToken,
+                refreshToken = tokenResponse.refreshToken
+            )
+
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

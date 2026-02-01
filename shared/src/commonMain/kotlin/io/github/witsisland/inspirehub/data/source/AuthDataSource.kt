@@ -21,6 +21,13 @@ interface AuthDataSource {
     suspend fun exchangeAuthCode(code: String): TokenResponseDto
 
     /**
+     * Google ID Tokenを検証してトークンを取得（SDK方式）
+     * @param idToken Google ID Token
+     * @return トークンレスポンス
+     */
+    suspend fun verifyGoogleToken(idToken: String): TokenResponseDto
+
+    /**
      * アクセストークンを更新
      * @param refreshToken リフレッシュトークン
      * @return トークンレスポンス

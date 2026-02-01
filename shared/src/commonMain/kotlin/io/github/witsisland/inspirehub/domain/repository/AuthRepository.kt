@@ -19,6 +19,13 @@ interface AuthRepository {
     suspend fun loginWithAuthCode(code: String): Result<User>
 
     /**
+     * Google ID Tokenを検証してログイン（SDK方式）
+     * @param idToken Google ID Token
+     * @return ログインしたユーザー
+     */
+    suspend fun verifyGoogleToken(idToken: String): Result<User>
+
+    /**
      * アクセストークンを更新
      */
     suspend fun refreshAccessToken(): Result<Unit>

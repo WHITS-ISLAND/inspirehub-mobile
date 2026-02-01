@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import GoogleSignIn
 
 @main
 struct iOSApp: App {
@@ -11,6 +12,10 @@ struct iOSApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .onOpenURL { url in
+                    // Google Sign-In のコールバックをハンドル
+                    GIDSignIn.sharedInstance.handle(url)
+                }
         }
     }
 }
