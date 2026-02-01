@@ -41,11 +41,21 @@ class AuthViewModelWrapper: ObservableObject {
             .autoconnect()
             .sink { [weak self] _ in
                 guard let self = self else { return }
-                self.currentUser = self.viewModel.currentUser.value as? User
-                self.isAuthenticated = self.viewModel.isAuthenticated.value as! Bool
-                self.isLoading = self.viewModel.isLoading.value as! Bool
-                self.error = self.viewModel.error.value as? String
-                self.authUrl = self.viewModel.authUrl.value as? String
+
+                let newUser = self.viewModel.currentUser.value as? User
+                if self.currentUser?.id != newUser?.id { self.currentUser = newUser }
+
+                let newIsAuthenticated = self.viewModel.isAuthenticated.value as! Bool
+                if self.isAuthenticated != newIsAuthenticated { self.isAuthenticated = newIsAuthenticated }
+
+                let newIsLoading = self.viewModel.isLoading.value as! Bool
+                if self.isLoading != newIsLoading { self.isLoading = newIsLoading }
+
+                let newError = self.viewModel.error.value as? String
+                if self.error != newError { self.error = newError }
+
+                let newAuthUrl = self.viewModel.authUrl.value as? String
+                if self.authUrl != newAuthUrl { self.authUrl = newAuthUrl }
             }
             .store(in: &cancellables)
     }
