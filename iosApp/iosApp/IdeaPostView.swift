@@ -86,7 +86,7 @@ struct IdeaPostView: View {
     private func addTag() {
         let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        viewModel.tags.append(trimmed)
+        viewModel.addTag(trimmed)
         tagInput = ""
     }
 }

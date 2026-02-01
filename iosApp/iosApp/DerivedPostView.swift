@@ -97,7 +97,7 @@ struct DerivedPostView: View {
                 }
             }
             .onAppear {
-                viewModel.parentNode = parentNode
+                viewModel.setParentNode(parentNode)
             }
             .onChange(of: viewModel.isSuccess) { newValue in
                 if newValue {
@@ -110,7 +110,7 @@ struct DerivedPostView: View {
     private func addTag() {
         let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        viewModel.tags.append(trimmed)
+        viewModel.addTag(trimmed)
         tagInput = ""
     }
 }
