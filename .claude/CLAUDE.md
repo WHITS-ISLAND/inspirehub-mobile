@@ -153,6 +153,71 @@ iosApp → shared (Shared.frameworkを経由)
 2. `shared/androidMain`と`shared/iosMain`で`actual`実装を提供
 3. `composeApp`の共通UIコードから利用
 
+## 🔴 iOS開発 必須ルール
+
+### ターゲットバージョン
+- **最低ターゲット: iOS 18**（可能な限りiOS 26のAPIを活用）
+- 非推奨APIの使用は禁止
+
+### 非推奨API禁止リスト
+
+| 使うな | 代わりにこれ | 理由 |
+|--------|-------------|------|
+| `NavigationView` | `NavigationStack` / `NavigationSplitView` | iOS 16で非推奨 |
+| `@StateObject` (KMP VM用) | `@StateViewModel` | KMP-ObservableViewModel正規の方法 |
+| `@ObservedObject` (KMP VM用) | `@ObservedViewModel` | 同上 |
+| `@EnvironmentObject` (KMP VM用) | `@EnvironmentViewModel` | 同上 |
+| `.onChange(of:) { newValue in }` | `.onChange(of:) { oldValue, newValue in }` | iOS 17で非推奨 |
+| `ObservableObject` Wrapper | Kotlin VM直接利用 | KMP-ObservableViewModelで不要 |
+
+### KMP-ObservableViewModel 設計方針
+
+**ViewModelWrapperは作るな。** KMP-ObservableViewModelを使えばKotlin VMをSwiftUIから直接利用できる。
+
+#### Kotlin側
+```kotlin
+import com.rickclephas.kmp.observableviewmodel.ViewModel
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
+
+class HomeViewModel(...) : ViewModel() {
+    @NativeCoroutinesState
+    val nodes: StateFlow<List<Node>> = ...
+
+    @NativeCoroutinesState
+    val isLoading: StateFlow<Boolean> = ...
+}
+```
+
+#### Swift側（グローバル設定 - 1回だけ）
+```swift
+// KMPViewModel+Extensions.swift
+import KMPObservableViewModelCore
+import shared
+
+extension Kmp_observableviewmodel_coreViewModel: @retroactive ViewModel { }
+extension Kmp_observableviewmodel_coreViewModel: @retroactive Observable { }
+```
+
+#### SwiftUI View
+```swift
+import KMPObservableViewModelSwiftUI
+
+struct HomeView: View {
+    @StateViewModel var viewModel = HomeViewModel()  // Kotlin VMを直接使用
+
+    var body: some View {
+        NavigationStack {
+            List(viewModel.nodes) { node in ... }
+        }
+    }
+}
+```
+
+### Observation フレームワーク
+- iOS 17+ の `Observation` フレームワークに対応済み（`@retroactive Observable`）
+- SwiftUIは**アクセスしたプロパティだけ**を監視 → 効率的な再描画
+
 ## 開発フロー
 
 1. **機能実装**:

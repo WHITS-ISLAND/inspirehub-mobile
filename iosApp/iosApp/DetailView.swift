@@ -1,9 +1,10 @@
 import SwiftUI
 import Shared
+import KMPObservableViewModelSwiftUI
 
 struct DetailView: View {
     let nodeId: String
-    @StateObject private var viewModel = DetailViewModelWrapper()
+    @StateViewModel var viewModel = KoinHelper().getDetailViewModel()
     @State private var showDerivedPost = false
 
     var body: some View {
@@ -216,7 +217,7 @@ struct DetailView: View {
             HStack(spacing: 8) {
                 TextField("コメントを入力...", text: Binding(
                     get: { viewModel.commentText },
-                    set: { viewModel.updateCommentText($0) }
+                    set: { viewModel.updateCommentText(text: $0) }
                 ))
                     .textFieldStyle(.roundedBorder)
 
@@ -264,7 +265,7 @@ struct DetailView: View {
 // MARK: - Preview
 
 #Preview("DetailView") {
-    NavigationView {
+    NavigationStack {
         DetailView(nodeId: "preview-1")
     }
 }

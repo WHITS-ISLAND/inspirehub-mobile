@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -7,6 +8,7 @@ import io.github.witsisland.inspirehub.domain.model.User
 import io.github.witsisland.inspirehub.domain.repository.AuthRepository
 import io.github.witsisland.inspirehub.domain.store.UserStore
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 認証ViewModel
@@ -16,34 +18,54 @@ class AuthViewModel(
     private val userStore: UserStore
 ) : ViewModel() {
 
-    // UserStore の状態を監視
-    val currentUser: StateFlow<User?> = userStore.currentUser
+    // UserStore の状態をVM側のMutableStateFlowに転写（KMP-ObservableViewModelの観測チェーンに乗せる）
+    private val _currentUser = MutableStateFlow<User?>(viewModelScope, null)
+    @NativeCoroutinesState
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
-    val isAuthenticated: StateFlow<Boolean> = userStore.isAuthenticated
+    private val _isAuthenticated = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
+
+    init {
+        // UserStoreのStateFlowをcollectしてVM側に転写
+        viewModelScope.launch {
+            userStore.currentUser.collect { _currentUser.value = it }
+        }
+        viewModelScope.launch {
+            userStore.isAuthenticated.collect { _isAuthenticated.value = it }
+        }
+    }
 
     // 画面固有の状態
-    val isLoading = MutableStateFlow(viewModelScope, false)
+    private val _isLoading = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    val authUrl = MutableStateFlow(viewModelScope, null as String?)
+    private val _authUrl = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val authUrl: StateFlow<String?> = _authUrl.asStateFlow()
 
     /**
      * Google OAuth URL を取得
      */
     fun getGoogleAuthUrl() {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val result = authRepository.getGoogleAuthUrl()
             if (result.isSuccess) {
-                authUrl.value = result.getOrNull()
+                _authUrl.value = result.getOrNull()
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to get auth URL"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to get auth URL"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 
@@ -52,15 +74,15 @@ class AuthViewModel(
      */
     fun loginWithAuthCode(code: String) {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val result = authRepository.loginWithAuthCode(code)
             if (result.isFailure) {
-                error.value = result.exceptionOrNull()?.message ?: "Login failed"
+                _error.value = result.exceptionOrNull()?.message ?: "Login failed"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 
@@ -69,15 +91,15 @@ class AuthViewModel(
      */
     fun fetchCurrentUser() {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val result = authRepository.getCurrentUser()
             if (result.isFailure) {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to fetch user"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to fetch user"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 
@@ -86,15 +108,15 @@ class AuthViewModel(
      */
     fun logout() {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val result = authRepository.logout()
             if (result.isFailure) {
-                error.value = result.exceptionOrNull()?.message ?: "Logout failed"
+                _error.value = result.exceptionOrNull()?.message ?: "Logout failed"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 
@@ -102,7 +124,7 @@ class AuthViewModel(
      * エラーをクリア
      */
     fun clearError() {
-        error.value = null
+        _error.value = null
     }
 
     /**
@@ -124,15 +146,15 @@ class AuthViewModel(
      */
     fun verifyGoogleToken(idToken: String) {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val result = authRepository.verifyGoogleToken(idToken)
             if (result.isFailure) {
-                error.value = result.exceptionOrNull()?.message ?: "Token verification failed"
+                _error.value = result.exceptionOrNull()?.message ?: "Token verification failed"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 }

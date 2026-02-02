@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -10,6 +11,7 @@ import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 詳細ViewModel
@@ -21,20 +23,40 @@ class DetailViewModel(
     private val commentRepository: CommentRepository
 ) : ViewModel() {
 
-    // NodeStoreの選択状態を監視
-    val selectedNode: StateFlow<Node?> = nodeStore.selectedNode
+    // NodeStoreの選択状態をVM側のMutableStateFlowに転写
+    private val _selectedNode = MutableStateFlow<Node?>(viewModelScope, null)
+    @NativeCoroutinesState
+    val selectedNode: StateFlow<Node?> = _selectedNode.asStateFlow()
 
-    val comments = MutableStateFlow(viewModelScope, emptyList<Comment>())
+    init {
+        viewModelScope.launch {
+            nodeStore.selectedNode.collect { _selectedNode.value = it }
+        }
+    }
 
-    val childNodes = MutableStateFlow(viewModelScope, emptyList<Node>())
+    private val _comments = MutableStateFlow(viewModelScope, emptyList<Comment>())
+    @NativeCoroutinesState
+    val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
 
-    val isLoading = MutableStateFlow(viewModelScope, false)
+    private val _childNodes = MutableStateFlow(viewModelScope, emptyList<Node>())
+    @NativeCoroutinesState
+    val childNodes: StateFlow<List<Node>> = _childNodes.asStateFlow()
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    private val _isLoading = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    val commentText = MutableStateFlow(viewModelScope, "")
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    val isCommentSubmitting = MutableStateFlow(viewModelScope, false)
+    private val _commentText = MutableStateFlow(viewModelScope, "")
+    @NativeCoroutinesState
+    val commentText: StateFlow<String> = _commentText.asStateFlow()
+
+    private val _isCommentSubmitting = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isCommentSubmitting: StateFlow<Boolean> = _isCommentSubmitting.asStateFlow()
 
     /**
      * ノード詳細を読み込み
@@ -42,8 +64,8 @@ class DetailViewModel(
      */
     fun loadDetail(nodeId: String) {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val nodeDeferred = async { nodeRepository.getNode(nodeId) }
             val commentsDeferred = async { commentRepository.getComments(nodeId) }
@@ -56,18 +78,18 @@ class DetailViewModel(
             if (nodeResult.isSuccess) {
                 nodeStore.selectNode(nodeResult.getOrNull())
             } else {
-                error.value = nodeResult.exceptionOrNull()?.message ?: "Failed to load node"
+                _error.value = nodeResult.exceptionOrNull()?.message ?: "Failed to load node"
             }
 
             if (commentsResult.isSuccess) {
-                comments.value = commentsResult.getOrNull() ?: emptyList()
+                _comments.value = commentsResult.getOrNull() ?: emptyList()
             }
 
             if (childNodesResult.isSuccess) {
-                childNodes.value = childNodesResult.getOrNull() ?: emptyList()
+                _childNodes.value = childNodesResult.getOrNull() ?: emptyList()
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 
@@ -81,13 +103,13 @@ class DetailViewModel(
             if (result.isSuccess) {
                 nodeStore.selectNode(result.getOrNull())
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to toggle like"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle like"
             }
         }
     }
 
     fun updateCommentText(text: String) {
-        commentText.value = text
+        _commentText.value = text
     }
 
     /**
@@ -95,12 +117,12 @@ class DetailViewModel(
      */
     fun submitComment() {
         val nodeId = selectedNode.value?.id ?: return
-        val text = commentText.value.trim()
+        val text = _commentText.value.trim()
         if (text.isEmpty()) return
 
         viewModelScope.launch {
-            isCommentSubmitting.value = true
-            error.value = null
+            _isCommentSubmitting.value = true
+            _error.value = null
 
             val result = commentRepository.createComment(
                 nodeId = nodeId,
@@ -108,15 +130,15 @@ class DetailViewModel(
             )
 
             if (result.isSuccess) {
-                commentText.value = ""
+                _commentText.value = ""
                 result.getOrNull()?.let { comment ->
-                    comments.value = comments.value + comment
+                    _comments.value = _comments.value + comment
                 }
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to post comment"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to post comment"
             }
 
-            isCommentSubmitting.value = false
+            _isCommentSubmitting.value = false
         }
     }
 

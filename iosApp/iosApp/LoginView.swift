@@ -1,9 +1,12 @@
 import SwiftUI
+import Shared
 import GoogleSignIn
 import GoogleSignInSwift
+import KMPObservableViewModelSwiftUI
 
 struct LoginView: View {
-    @ObservedObject var viewModel: AuthViewModelWrapper
+    @ObservedViewModel var viewModel: AuthViewModel
+    @State private var signInError: String?
 
     var body: some View {
         VStack(spacing: 32) {
@@ -48,8 +51,8 @@ struct LoginView: View {
                     .padding(.top, 8)
             }
 
-            // エラー表示
-            if let error = viewModel.error {
+            // エラー表示（VM側 + クライアント側）
+            if let error = viewModel.error ?? signInError {
                 Text(error)
                     .font(.caption)
                     .foregroundColor(.red)
@@ -62,6 +65,8 @@ struct LoginView: View {
     }
 
     private func handleGoogleSignIn() {
+        signInError = nil
+
         #if DEBUG
         // Phase1: モック認証（Google OAuth未設定のため）
         viewModel.mockLogin()
@@ -80,14 +85,14 @@ struct LoginView: View {
         GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
             if let error = error {
                 print("Google Sign-In Error: \(error.localizedDescription)")
-                viewModel.error = error.localizedDescription
+                signInError = error.localizedDescription
                 return
             }
 
             guard let user = result?.user,
                   let idToken = user.idToken?.tokenString else {
                 print("Error: Could not get ID token")
-                viewModel.error = "認証情報の取得に失敗しました"
+                signInError = "認証情報の取得に失敗しました"
                 return
             }
 
@@ -104,5 +109,5 @@ struct LoginView: View {
 // MARK: - Preview
 
 #Preview("LoginView") {
-    LoginView(viewModel: AuthViewModelWrapper())
+    LoginView(viewModel: KoinHelper().getAuthViewModel())
 }

@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -8,6 +9,7 @@ import io.github.witsisland.inspirehub.domain.model.NodeType
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 投稿ViewModel
@@ -18,40 +20,54 @@ class PostViewModel(
     private val nodeRepository: NodeRepository
 ) : ViewModel() {
 
-    val title = MutableStateFlow(viewModelScope, "")
+    private val _title = MutableStateFlow(viewModelScope, "")
+    @NativeCoroutinesState
+    val title: StateFlow<String> = _title.asStateFlow()
 
-    val content = MutableStateFlow(viewModelScope, "")
+    private val _content = MutableStateFlow(viewModelScope, "")
+    @NativeCoroutinesState
+    val content: StateFlow<String> = _content.asStateFlow()
 
-    val tags = MutableStateFlow(viewModelScope, emptyList<String>())
+    private val _tags = MutableStateFlow(viewModelScope, emptyList<String>())
+    @NativeCoroutinesState
+    val tags: StateFlow<List<String>> = _tags.asStateFlow()
 
-    val parentNode = MutableStateFlow(viewModelScope, null as Node?)
+    private val _parentNode = MutableStateFlow(viewModelScope, null as Node?)
+    @NativeCoroutinesState
+    val parentNode: StateFlow<Node?> = _parentNode.asStateFlow()
 
-    val isSubmitting = MutableStateFlow(viewModelScope, false)
+    private val _isSubmitting = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isSubmitting: StateFlow<Boolean> = _isSubmitting.asStateFlow()
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
-    val isSuccess = MutableStateFlow(viewModelScope, false)
+    private val _isSuccess = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isSuccess: StateFlow<Boolean> = _isSuccess.asStateFlow()
 
     fun updateTitle(value: String) {
-        title.value = value
+        _title.value = value
     }
 
     fun updateContent(value: String) {
-        content.value = value
+        _content.value = value
     }
 
     fun addTag(tag: String) {
-        if (tag !in tags.value) {
-            tags.value = tags.value + tag
+        if (tag !in _tags.value) {
+            _tags.value = _tags.value + tag
         }
     }
 
     fun removeTag(tag: String) {
-        tags.value = tags.value - tag
+        _tags.value = _tags.value - tag
     }
 
     fun setParentNode(node: Node?) {
-        parentNode.value = node
+        _parentNode.value = node
     }
 
     /**
@@ -72,46 +88,46 @@ class PostViewModel(
      * 派生投稿（親ノードに紐づくアイデア）
      */
     fun submitDerived() {
-        submit(NodeType.IDEA, parentNodeId = parentNode.value?.id)
+        submit(NodeType.IDEA, parentNodeId = _parentNode.value?.id)
     }
 
     /**
      * フォームをリセット
      */
     fun reset() {
-        title.value = ""
-        content.value = ""
-        tags.value = emptyList()
-        parentNode.value = null
-        isSubmitting.value = false
-        error.value = null
-        isSuccess.value = false
+        _title.value = ""
+        _content.value = ""
+        _tags.value = emptyList()
+        _parentNode.value = null
+        _isSubmitting.value = false
+        _error.value = null
+        _isSuccess.value = false
     }
 
     private fun submit(type: NodeType, parentNodeId: String?) {
         viewModelScope.launch {
-            isSubmitting.value = true
-            error.value = null
-            isSuccess.value = false
+            _isSubmitting.value = true
+            _error.value = null
+            _isSuccess.value = false
 
             val result = nodeRepository.createNode(
-                title = title.value,
-                content = content.value,
+                title = _title.value,
+                content = _content.value,
                 type = type,
                 parentNodeId = parentNodeId,
-                tags = tags.value
+                tags = _tags.value
             )
 
             if (result.isSuccess) {
                 result.getOrNull()?.let { node ->
                     nodeStore.addNode(node)
                 }
-                isSuccess.value = true
+                _isSuccess.value = true
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to create post"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to create post"
             }
 
-            isSubmitting.value = false
+            _isSubmitting.value = false
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -7,6 +8,7 @@ import io.github.witsisland.inspirehub.domain.model.Node
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * マップ画面ViewModel（Phase1簡易版：リスト+派生関係インデント表示）
@@ -16,22 +18,38 @@ class MapViewModel(
     private val nodeRepository: NodeRepository
 ) : ViewModel() {
 
-    val nodes: StateFlow<List<Node>> = nodeStore.nodes
+    // NodeStoreの状態をVM側のMutableStateFlowに転写
+    private val _nodes = MutableStateFlow<List<Node>>(viewModelScope, emptyList())
+    @NativeCoroutinesState
+    val nodes: StateFlow<List<Node>> = _nodes.asStateFlow()
 
-    val isLoading: StateFlow<Boolean> = nodeStore.isLoading
+    private val _isLoading = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    init {
+        viewModelScope.launch {
+            nodeStore.nodes.collect { _nodes.value = it }
+        }
+        viewModelScope.launch {
+            nodeStore.isLoading.collect { _isLoading.value = it }
+        }
+    }
+
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun loadNodes() {
         viewModelScope.launch {
             nodeStore.setLoading(true)
-            error.value = null
+            _error.value = null
 
             val result = nodeRepository.getNodes()
             if (result.isSuccess) {
                 nodeStore.updateNodes(result.getOrThrow())
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
             }
 
             nodeStore.setLoading(false)

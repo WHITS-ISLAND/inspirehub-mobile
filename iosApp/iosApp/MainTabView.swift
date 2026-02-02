@@ -14,26 +14,32 @@ struct MainTabView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             TabView(selection: $selectedTab) {
-                HomeView()
-                    .tabItem {
-                        Image(systemName: "house.fill")
-                        Text("ホーム")
-                    }
-                    .tag(0)
+                NavigationStack {
+                    HomeView()
+                }
+                .tabItem {
+                    Image(systemName: "house.fill")
+                    Text("ホーム")
+                }
+                .tag(0)
 
-                MapPlaceholderView()
-                    .tabItem {
-                        Image(systemName: "map.fill")
-                        Text("マップ")
-                    }
-                    .tag(1)
+                NavigationStack {
+                    MapView()
+                }
+                .tabItem {
+                    Image(systemName: "map.fill")
+                    Text("マップ")
+                }
+                .tag(1)
 
-                MyPagePlaceholderView()
-                    .tabItem {
-                        Image(systemName: "person.fill")
-                        Text("マイページ")
-                    }
-                    .tag(2)
+                NavigationStack {
+                    MyPageView()
+                }
+                .tabItem {
+                    Image(systemName: "person.fill")
+                    Text("マイページ")
+                }
+                .tag(2)
             }
 
             // FAB
@@ -78,40 +84,6 @@ struct MainTabView: View {
     }
 }
 
-// MARK: - Placeholder Views
-
-struct MapPlaceholderView: View {
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                Image(systemName: "map")
-                    .font(.system(size: 60))
-                    .foregroundColor(.secondary)
-                Text("マップ機能は今後実装予定")
-                    .foregroundColor(.secondary)
-            }
-            .navigationTitle("マップ")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
-struct MyPagePlaceholderView: View {
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                Image(systemName: "person.circle")
-                    .font(.system(size: 60))
-                    .foregroundColor(.secondary)
-                Text("マイページは今後実装予定")
-                    .foregroundColor(.secondary)
-            }
-            .navigationTitle("マイページ")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-
 // MARK: - Preview
 
 #Preview("MainTabView") {
@@ -124,4 +96,3 @@ struct MyPagePlaceholderView: View {
         onIdeaSelected: {}
     )
 }
-
