@@ -112,3 +112,16 @@ struct MyPagePlaceholderView: View {
     }
 }
 
+// MARK: - Preview
+
+#Preview("MainTabView") {
+    MainTabView()
+}
+
+#Preview("PostTypeSelectSheet") {
+    PostTypeSelectSheet(
+        onIssueSelected: {},
+        onIdeaSelected: {}
+    )
+}
+
