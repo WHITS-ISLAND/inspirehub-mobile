@@ -114,3 +114,9 @@ struct DerivedPostView: View {
         tagInput = ""
     }
 }
+
+// MARK: - Preview
+
+#Preview("DerivedPostView") {
+    DerivedPostView(parentNode: PreviewData.sampleIssueNode)
+}
