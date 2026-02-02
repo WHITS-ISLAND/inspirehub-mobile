@@ -1,15 +1,23 @@
 import SwiftUI
 import Shared
+import KMPObservableViewModelSwiftUI
 
 struct DerivedPostView: View {
     let parentNode: Node
-    @StateObject private var viewModel = PostViewModelWrapper()
+    @StateViewModel var viewModel = KoinHelper().getPostViewModel()
     @Environment(\.dismiss) private var dismiss
 
     @State private var tagInput: String = ""
 
+    private var title: String { viewModel.title as? String ?? "" }
+    private var content: String { viewModel.content as? String ?? "" }
+    private var tags: [String] { viewModel.tags as? [String] ?? [] }
+    private var isSubmitting: Bool { viewModel.isSubmitting as? Bool ?? false }
+    private var error: String? { viewModel.error as? String }
+    private var isSuccess: Bool { viewModel.isSuccess as? Bool ?? false }
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("派生元")) {
                     HStack {
@@ -32,15 +40,15 @@ struct DerivedPostView: View {
 
                 Section(header: Text("タイトル")) {
                     TextField("派生アイデアのタイトルを入力", text: Binding(
-                        get: { viewModel.title },
-                        set: { viewModel.updateTitle($0) }
+                        get: { title },
+                        set: { viewModel.updateTitle(value: $0) }
                     ))
                 }
 
                 Section(header: Text("本文")) {
                     TextEditor(text: Binding(
-                        get: { viewModel.content },
-                        set: { viewModel.updateContent($0) }
+                        get: { content },
+                        set: { viewModel.updateContent(value: $0) }
                     ))
                     .frame(minHeight: 150)
                 }
@@ -58,14 +66,14 @@ struct DerivedPostView: View {
                         .disabled(tagInput.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
 
-                    if !viewModel.tags.isEmpty {
-                        FlowLayout(tags: viewModel.tags) { tag in
+                    if !tags.isEmpty {
+                        FlowLayout(tags: tags) { tag in
                             TagChip(text: tag)
                         }
                     }
                 }
 
-                if let error = viewModel.error {
+                if let error = error {
                     Section {
                         Text(error)
                             .foregroundColor(.red)
@@ -85,11 +93,11 @@ struct DerivedPostView: View {
                     Button("投稿") {
                         viewModel.submitDerived()
                     }
-                    .disabled(viewModel.title.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isSubmitting)
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
                 }
             }
             .overlay {
-                if viewModel.isSubmitting {
+                if isSubmitting {
                     ProgressView("投稿中...")
                         .padding()
                         .background(Color(.systemBackground).opacity(0.9))
@@ -97,9 +105,9 @@ struct DerivedPostView: View {
                 }
             }
             .onAppear {
-                viewModel.setParentNode(parentNode)
+                viewModel.setParentNode(node: parentNode)
             }
-            .onChange(of: viewModel.isSuccess) { newValue in
+            .onChange(of: isSuccess) { newValue in
                 if newValue {
                     dismiss()
                 }
@@ -110,7 +118,7 @@ struct DerivedPostView: View {
     private func addTag() {
         let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        viewModel.addTag(trimmed)
+        viewModel.addTag(tag: trimmed)
         tagInput = ""
     }
 }
