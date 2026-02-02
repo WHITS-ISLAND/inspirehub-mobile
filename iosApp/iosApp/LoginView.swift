@@ -100,3 +100,9 @@ struct LoginView: View {
         }
     }
 }
+
+// MARK: - Preview
+
+#Preview("LoginView") {
+    LoginView(viewModel: AuthViewModelWrapper())
+}

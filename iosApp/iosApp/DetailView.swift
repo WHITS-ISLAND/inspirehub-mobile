@@ -260,3 +260,11 @@ struct DetailView: View {
         .cornerRadius(8)
     }
 }
+
+// MARK: - Preview
+
+#Preview("DetailView") {
+    NavigationView {
+        DetailView(nodeId: "preview-1")
+    }
+}

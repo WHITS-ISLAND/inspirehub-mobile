@@ -196,3 +196,50 @@ struct NodeCardView: View {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
+
+// MARK: - Preview
+
+#Preview("HomeView") {
+    HomeView()
+}
+
+#Preview("NodeCardView") {
+    NodeCardView(node: PreviewData.sampleNode)
+        .padding()
+}
+
+enum PreviewData {
+    static var sampleNode: Node {
+        Node(
+            id: "preview-1",
+            type: .idea,
+            title: "サンプルアイデア",
+            content: "これはプレビュー用のサンプルノードです。実際のデータではありません。",
+            authorId: "user-1",
+            parentNodeId: nil,
+            tagIds: [],
+            likeCount: 5,
+            isLiked: true,
+            commentCount: 3,
+            createdAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970), nanosecondAdjustment: 0),
+            updatedAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970), nanosecondAdjustment: 0)
+        )
+    }
+
+    static var sampleIssueNode: Node {
+        Node(
+            id: "preview-2",
+            type: .issue,
+            title: "サンプル課題",
+            content: "リモートワークで雑談の機会が減っている。チームの一体感が薄れている。",
+            authorId: "user-2",
+            parentNodeId: nil,
+            tagIds: [],
+            likeCount: 12,
+            isLiked: false,
+            commentCount: 7,
+            createdAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970) - 3600, nanosecondAdjustment: 0),
+            updatedAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970) - 3600, nanosecondAdjustment: 0)
+        )
+    }
+}

@@ -101,3 +101,9 @@ struct MapView: View {
         .background(Color(.systemBackground))
     }
 }
+
+// MARK: - Preview
+
+#Preview("MapView") {
+    MapView()
+}

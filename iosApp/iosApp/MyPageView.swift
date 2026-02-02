@@ -124,3 +124,9 @@ struct MyPageView: View {
         }
     }
 }
+
+// MARK: - Preview
+
+#Preview("MyPageView") {
+    MyPageView()
+}
