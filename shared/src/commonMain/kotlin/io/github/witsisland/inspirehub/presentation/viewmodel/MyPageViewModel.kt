@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -8,6 +9,7 @@ import io.github.witsisland.inspirehub.domain.model.User
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.store.UserStore
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * マイページViewModel
@@ -17,34 +19,41 @@ class MyPageViewModel(
     private val nodeRepository: NodeRepository
 ) : ViewModel() {
 
+    @NativeCoroutinesState
     val currentUser: StateFlow<User?> = userStore.currentUser
 
-    val myNodes = MutableStateFlow(viewModelScope, emptyList<Node>())
+    private val _myNodes = MutableStateFlow(viewModelScope, emptyList<Node>())
+    @NativeCoroutinesState
+    val myNodes: StateFlow<List<Node>> = _myNodes.asStateFlow()
 
-    val isLoading = MutableStateFlow(viewModelScope, false)
+    private val _isLoading = MutableStateFlow(viewModelScope, false)
+    @NativeCoroutinesState
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun loadMyNodes() {
         viewModelScope.launch {
-            isLoading.value = true
-            error.value = null
+            _isLoading.value = true
+            _error.value = null
 
             val userId = currentUser.value?.id
             if (userId == null) {
-                error.value = "User not authenticated"
-                isLoading.value = false
+                _error.value = "User not authenticated"
+                _isLoading.value = false
                 return@launch
             }
 
             val result = nodeRepository.getNodes()
             if (result.isSuccess) {
-                myNodes.value = result.getOrThrow().filter { it.authorId == userId }
+                _myNodes.value = result.getOrThrow().filter { it.authorId == userId }
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
             }
 
-            isLoading.value = false
+            _isLoading.value = false
         }
     }
 

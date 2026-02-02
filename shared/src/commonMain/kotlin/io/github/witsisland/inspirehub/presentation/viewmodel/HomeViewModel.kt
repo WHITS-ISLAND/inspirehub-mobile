@@ -1,5 +1,6 @@
 package io.github.witsisland.inspirehub.presentation.viewmodel
 
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
@@ -11,6 +12,7 @@ import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.SortOrder
 import io.github.witsisland.inspirehub.domain.store.UserStore
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * ホーム画面ViewModel
@@ -21,26 +23,33 @@ class HomeViewModel(
     private val userStore: UserStore
 ) : ViewModel() {
 
-    val nodes = MutableStateFlow<List<Node>>(viewModelScope, emptyList())
+    private val _nodes = MutableStateFlow<List<Node>>(viewModelScope, emptyList())
+    @NativeCoroutinesState
+    val nodes: StateFlow<List<Node>> = _nodes.asStateFlow()
 
+    @NativeCoroutinesState
     val isLoading: StateFlow<Boolean> = nodeStore.isLoading
 
+    @NativeCoroutinesState
     val currentTab: StateFlow<HomeTab> = nodeStore.currentTab
 
+    @NativeCoroutinesState
     val sortOrder: StateFlow<SortOrder> = nodeStore.sortOrder
 
-    val error = MutableStateFlow(viewModelScope, null as String?)
+    private val _error = MutableStateFlow(viewModelScope, null as String?)
+    @NativeCoroutinesState
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     fun loadNodes(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             nodeStore.setLoading(true)
-            error.value = null
+            _error.value = null
 
             val result = nodeRepository.getNodes()
             if (result.isSuccess) {
                 nodeStore.updateNodes(result.getOrThrow())
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
             }
 
             applyFilter()
@@ -71,7 +80,7 @@ class HomeViewModel(
             HomeTab.IDEAS -> allNodes.filter { it.type == NodeType.IDEA }
             HomeTab.MINE -> allNodes
         }
-        nodes.value = when (order) {
+        _nodes.value = when (order) {
             SortOrder.RECENT -> filtered.sortedByDescending { it.createdAt }
             SortOrder.POPULAR -> filtered
         }
@@ -83,7 +92,7 @@ class HomeViewModel(
             if (result.isSuccess) {
                 loadNodes()
             } else {
-                error.value = result.exceptionOrNull()?.message ?: "Failed to toggle like"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle like"
             }
         }
     }
