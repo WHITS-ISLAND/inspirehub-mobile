@@ -80,3 +80,12 @@ struct PostTypeSelectSheet: View {
         .presentationDetents([.medium])
     }
 }
+
+// MARK: - Preview
+
+#Preview("PostTypeSelectSheet") {
+    PostTypeSelectSheet(
+        onIssueSelected: {},
+        onIdeaSelected: {}
+    )
+}
