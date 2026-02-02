@@ -4,12 +4,16 @@ import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import io.github.witsisland.inspirehub.domain.model.Node
+import io.github.witsisland.inspirehub.domain.model.NodeType
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.store.HomeTab
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.SortOrder
 import io.github.witsisland.inspirehub.domain.store.UserStore
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * ホーム画面ViewModel
@@ -20,7 +24,22 @@ class HomeViewModel(
     private val userStore: UserStore
 ) : ViewModel() {
 
-    val nodes: StateFlow<List<Node>> = nodeStore.nodes
+    val nodes: StateFlow<List<Node>> = combine(
+        nodeStore.nodes,
+        nodeStore.currentTab,
+        nodeStore.sortOrder
+    ) { allNodes, tab, order ->
+        val filtered = when (tab) {
+            HomeTab.RECENT -> allNodes
+            HomeTab.ISSUES -> allNodes.filter { it.type == NodeType.ISSUE }
+            HomeTab.IDEAS -> allNodes.filter { it.type == NodeType.IDEA }
+            HomeTab.MINE -> allNodes // TODO: currentUserのauthorIdでフィルタ
+        }
+        when (order) {
+            SortOrder.RECENT -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.POPULAR -> filtered // TODO: likeCountでソート
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val isLoading: StateFlow<Boolean> = nodeStore.isLoading
 
@@ -50,7 +69,6 @@ class HomeViewModel(
 
     fun setTab(tab: HomeTab) {
         nodeStore.setTab(tab)
-        loadNodes()
     }
 
     fun setSortOrder(order: SortOrder) {
