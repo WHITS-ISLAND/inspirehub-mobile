@@ -45,6 +45,12 @@ class UserStore {
      * ログイン状態を設定
      */
     fun login(user: User, accessToken: String, refreshToken: String) {
+        println("=== UserStore.login() ===")
+        println("User: ${user.handle} (id: ${user.id})")
+        println("Access Token: ${accessToken.take(20)}...")
+        println("Refresh Token: ${refreshToken.take(20)}...")
+        println("======================")
+
         _currentUser.value = user
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken

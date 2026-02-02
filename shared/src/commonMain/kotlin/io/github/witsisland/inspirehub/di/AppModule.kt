@@ -2,15 +2,27 @@ package io.github.witsisland.inspirehub.di
 
 import io.github.witsisland.inspirehub.data.network.createHttpClient
 import io.github.witsisland.inspirehub.data.repository.AuthRepositoryImpl
+import io.github.witsisland.inspirehub.data.repository.CommentRepositoryImpl
+import io.github.witsisland.inspirehub.data.repository.NodeRepositoryImpl
 import io.github.witsisland.inspirehub.data.source.AuthDataSource
 import io.github.witsisland.inspirehub.data.source.CommentDataSource
 import io.github.witsisland.inspirehub.data.source.KtorAuthDataSource
 import io.github.witsisland.inspirehub.data.source.KtorCommentDataSource
 import io.github.witsisland.inspirehub.data.source.KtorNodeDataSource
+import io.github.witsisland.inspirehub.data.source.MockCommentDataSource
+import io.github.witsisland.inspirehub.data.source.MockNodeDataSource
 import io.github.witsisland.inspirehub.data.source.NodeDataSource
 import io.github.witsisland.inspirehub.domain.repository.AuthRepository
+import io.github.witsisland.inspirehub.domain.repository.CommentRepository
+import io.github.witsisland.inspirehub.domain.repository.NodeRepository
+import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.UserStore
 import io.github.witsisland.inspirehub.presentation.viewmodel.AuthViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.DetailViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.HomeViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.MapViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.MyPageViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.PostViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
@@ -21,6 +33,7 @@ import org.koin.dsl.module
 val appModule = module {
     // Store（シングルトン、具象クラス）
     singleOf(::UserStore)
+    singleOf(::NodeStore)
 
     // HttpClient（シングルトン）
     single {
@@ -34,12 +47,19 @@ val appModule = module {
 
     // DataSource（シングルトン）
     single<AuthDataSource> { KtorAuthDataSource(get(), get()) }
-    single<NodeDataSource> { KtorNodeDataSource(get()) }
-    single<CommentDataSource> { KtorCommentDataSource(get()) }
+    single<NodeDataSource> { MockNodeDataSource() }
+    single<CommentDataSource> { MockCommentDataSource() }
 
     // Repository（シングルトン、インターフェース）
     single<AuthRepository> { AuthRepositoryImpl(get(), get()) }
+    single<NodeRepository> { NodeRepositoryImpl(get()) }
+    single<CommentRepository> { CommentRepositoryImpl(get()) }
 
     // ViewModel（Factory - 画面ごとに生成）
     factoryOf(::AuthViewModel)
+    factoryOf(::HomeViewModel)
+    factoryOf(::MapViewModel)
+    factoryOf(::MyPageViewModel)
+    factoryOf(::PostViewModel)
+    factoryOf(::DetailViewModel)
 }

@@ -1,0 +1,69 @@
+package io.github.witsisland.inspirehub.presentation.viewmodel
+
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
+import com.rickclephas.kmp.observableviewmodel.ViewModel
+import com.rickclephas.kmp.observableviewmodel.launch
+import io.github.witsisland.inspirehub.domain.model.Node
+import io.github.witsisland.inspirehub.domain.repository.NodeRepository
+import io.github.witsisland.inspirehub.domain.store.NodeStore
+import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * マップ画面ViewModel（Phase1簡易版：リスト+派生関係インデント表示）
+ */
+class MapViewModel(
+    private val nodeStore: NodeStore,
+    private val nodeRepository: NodeRepository
+) : ViewModel() {
+
+    val nodes: StateFlow<List<Node>> = nodeStore.nodes
+
+    val isLoading: StateFlow<Boolean> = nodeStore.isLoading
+
+    val error = MutableStateFlow(viewModelScope, null as String?)
+
+    fun loadNodes() {
+        viewModelScope.launch {
+            nodeStore.setLoading(true)
+            error.value = null
+
+            val result = nodeRepository.getNodes()
+            if (result.isSuccess) {
+                nodeStore.updateNodes(result.getOrThrow())
+            } else {
+                error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
+            }
+
+            nodeStore.setLoading(false)
+        }
+    }
+
+    /**
+     * ノードをツリー構造に変換
+     * parentNodeId を辿り、ルートノード → 子ノードの階層を構築
+     */
+    fun getNodeTree(): List<NodeTreeItem> {
+        val allNodes = nodes.value
+        val childrenMap = allNodes.groupBy { it.parentNodeId }
+        val result = mutableListOf<NodeTreeItem>()
+
+        fun buildTree(parentId: String?, depth: Int) {
+            val children = childrenMap[parentId] ?: return
+            for (node in children) {
+                val childCount = childrenMap[node.id]?.size ?: 0
+                result.add(NodeTreeItem(node = node, depth = depth, childCount = childCount))
+                buildTree(node.id, depth + 1)
+            }
+        }
+
+        // ルートノード（parentNodeId == null）から開始
+        buildTree(null, 0)
+        return result
+    }
+}
+
+data class NodeTreeItem(
+    val node: Node,
+    val depth: Int,
+    val childCount: Int
+)

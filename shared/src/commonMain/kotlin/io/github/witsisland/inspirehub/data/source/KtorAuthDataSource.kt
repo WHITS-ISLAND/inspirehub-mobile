@@ -18,8 +18,8 @@ class KtorAuthDataSource(
 ) : AuthDataSource {
 
     companion object {
-        // TODO: 環境に応じて変更する必要がある
-        private const val REDIRECT_URI = "inspirehub://auth/callback"
+        // Google OAuthの仕様によりHTTPS URLが必要
+        private const val REDIRECT_URI = "https://api.inspirehub.wtnqk.org/auth/callback"
     }
 
     override suspend fun getGoogleAuthUrl(): String {
@@ -70,5 +70,15 @@ class KtorAuthDataSource(
 
     override suspend fun logout() {
         httpClient.post("/auth/logout")
+    }
+
+    override suspend fun verifyGoogleToken(idToken: String): TokenResponseDto {
+        println("=== Verify Google Token ===")
+        println("ID Token: ${idToken.take(20)}...")
+
+        return httpClient.post("/auth/google/verify") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id_token" to idToken))
+        }.body()
     }
 }
