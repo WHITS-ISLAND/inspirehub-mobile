@@ -90,3 +90,9 @@ struct IdeaPostView: View {
         tagInput = ""
     }
 }
+
+// MARK: - Preview
+
+#Preview("IdeaPostView") {
+    IdeaPostView()
+}
