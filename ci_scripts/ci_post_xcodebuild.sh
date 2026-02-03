@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+# set -eしない: 失敗時もDiscord通知を最後まで実行するため
 
 echo "=== ci_post_xcodebuild.sh ==="
 
@@ -16,13 +16,13 @@ fi
 #   DISCORD_CHANNEL_ID: 通知先のChannel ID
 
 if [ -z "$DISCORD_BOT_TOKEN" ]; then
-    echo "Error: DISCORD_BOT_TOKEN is not set. Set it in Xcode Cloud environment variables."
-    exit 1
+    echo "Warning: DISCORD_BOT_TOKEN is not set. Skipping Discord notification."
+    exit 0
 fi
 
 if [ -z "$DISCORD_CHANNEL_ID" ]; then
-    echo "Error: DISCORD_CHANNEL_ID is not set. Set it in Xcode Cloud environment variables."
-    exit 1
+    echo "Warning: DISCORD_CHANNEL_ID is not set. Skipping Discord notification."
+    exit 0
 fi
 
 # --- 直近のコミットメッセージを取得 ---
@@ -81,11 +81,18 @@ PAYLOAD=$(cat <<ENDJSON
 ENDJSON
 )
 
-curl -f -X POST \
+HTTP_CODE=$(curl -s -o /tmp/discord_response.txt -w "%{http_code}" -X POST \
     "https://discord.com/api/v10/channels/${DISCORD_CHANNEL_ID}/messages" \
     -H "Authorization: Bot ${DISCORD_BOT_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "$PAYLOAD"
+    -d "$PAYLOAD" 2>&1) || true
+
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "204" ]; then
+    echo "Discord notification sent successfully (HTTP $HTTP_CODE)"
+else
+    echo "Warning: Discord notification failed (HTTP $HTTP_CODE)"
+    cat /tmp/discord_response.txt 2>/dev/null || true
+fi
 
 echo ""
-echo "=== Discord notification sent ==="
+echo "=== ci_post_xcodebuild.sh done ==="
