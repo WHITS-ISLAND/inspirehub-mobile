@@ -67,11 +67,11 @@ struct LoginView: View {
     private func handleGoogleSignIn() {
         signInError = nil
 
-        #if DEBUG
+        //#if DEBUG
         // Phase1: モック認証（Google OAuth未設定のため）
         viewModel.mockLogin()
         return
-        #endif
+        //#endif
 
         // === 以下は本来のGoogle Sign-In処理（そのまま残す） ===
         print("=== Google Sign-In Started ===")
