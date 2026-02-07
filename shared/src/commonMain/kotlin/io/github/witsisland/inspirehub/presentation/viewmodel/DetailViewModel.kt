@@ -105,7 +105,8 @@ class DetailViewModel(
             }
 
             if (commentsResult.isSuccess) {
-                _comments.value = commentsResult.getOrNull() ?: emptyList()
+                _comments.value = (commentsResult.getOrNull() ?: emptyList())
+                    .sortedByDescending { it.createdAt }
             }
 
             if (childNodesResult.isSuccess) {
@@ -160,7 +161,7 @@ class DetailViewModel(
             if (result.isSuccess) {
                 _commentText.value = ""
                 result.getOrNull()?.let { comment ->
-                    _comments.value = _comments.value + comment
+                    _comments.value = listOf(comment) + _comments.value
                 }
             } else {
                 _error.value = result.exceptionOrNull()?.message ?: "Failed to post comment"
