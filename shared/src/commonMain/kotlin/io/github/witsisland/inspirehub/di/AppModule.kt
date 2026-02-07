@@ -23,10 +23,12 @@ import io.github.witsisland.inspirehub.domain.repository.CommentRepository
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.repository.ReactionRepository
 import io.github.witsisland.inspirehub.domain.repository.TagRepository
+import io.github.witsisland.inspirehub.domain.store.DiscoverStore
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.UserStore
 import io.github.witsisland.inspirehub.presentation.viewmodel.AuthViewModel
 import io.github.witsisland.inspirehub.presentation.viewmodel.DetailViewModel
+import io.github.witsisland.inspirehub.presentation.viewmodel.DiscoverViewModel
 import io.github.witsisland.inspirehub.presentation.viewmodel.HomeViewModel
 import io.github.witsisland.inspirehub.presentation.viewmodel.MapViewModel
 import io.github.witsisland.inspirehub.presentation.viewmodel.MyPageViewModel
@@ -42,6 +44,7 @@ val appModule = module {
     // Store（シングルトン、具象クラス）
     singleOf(::UserStore)
     singleOf(::NodeStore)
+    singleOf(::DiscoverStore)
 
     // HttpClient（シングルトン）
     single {
@@ -74,4 +77,5 @@ val appModule = module {
     factoryOf(::MyPageViewModel)
     factoryOf(::PostViewModel)
     factoryOf(::DetailViewModel)
+    factoryOf(::DiscoverViewModel)
 }
