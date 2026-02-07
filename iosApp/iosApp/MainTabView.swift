@@ -13,6 +13,7 @@ struct MainTabView: View {
     @State private var showIssuePost = false
     @State private var showIdeaPost = false
     @State private var pendingPostType: PostType?
+    @State private var pendingPostAfterLogin = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -59,6 +60,7 @@ struct MainTabView: View {
                 if isAuthenticated {
                     showPostTypeSheet = true
                 } else {
+                    pendingPostAfterLogin = true
                     onLoginRequired()
                 }
             }) {
@@ -97,6 +99,18 @@ struct MainTabView: View {
         }
         .fullScreenCover(isPresented: $showIdeaPost) {
             IdeaPostView()
+        }
+        .onChange(of: isAuthenticated) { _, newValue in
+            if newValue && pendingPostAfterLogin {
+                pendingPostAfterLogin = false
+                // ログインシートのdismissアニメーション完了を待ってから表示
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    showPostTypeSheet = true
+                }
+            }
+        }
+        .onChange(of: selectedTab) { _, _ in
+            pendingPostAfterLogin = false
         }
     }
 
