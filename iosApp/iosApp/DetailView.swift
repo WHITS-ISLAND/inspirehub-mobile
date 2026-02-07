@@ -277,7 +277,7 @@ struct DetailView: View {
                 Image(systemName: "person")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text("\(node.authorName)：\(node.authorId)")
+                Text(node.authorName)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -426,25 +426,45 @@ struct DetailView: View {
     private var childNodesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if !viewModel.childNodes.isEmpty {
-                Text("派生ノード")
+                Text("派生先")
                     .font(.headline)
 
                 ForEach(viewModel.childNodes, id: \.id) { child in
                     NavigationLink(destination: DetailView(nodeId: child.id)) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.turn.down.right")
-                                .foregroundColor(.appPrimary)
-                                .font(.caption)
-                            Text(child.title)
-                                .font(.subheadline)
-                                .lineLimit(1)
+                        HStack(spacing: 10) {
+                            Image(systemName: NodeTypeStyle.icon(for: child.type))
+                                .font(.title3)
+                                .foregroundColor(NodeTypeStyle.color(for: child.type))
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 4) {
+                                    Text("派生先")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(NodeTypeStyle.label(for: child.type))
+                                        .font(.caption2)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(NodeTypeStyle.color(for: child.type))
+                                }
+                                Text(child.title)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                    .lineLimit(2)
+                                if !child.content.isEmpty {
+                                    Text(child.content)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(3)
+                                }
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        .padding(10)
-                        .background(Color(.secondarySystemBackground))
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(NodeTypeStyle.color(for: child.type).opacity(0.05))
                         .cornerRadius(8)
                     }
                     .buttonStyle(.plain)
