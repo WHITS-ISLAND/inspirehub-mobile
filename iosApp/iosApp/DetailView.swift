@@ -71,7 +71,7 @@ struct DetailView: View {
                 .padding(16)
             }
             .refreshable {
-                viewModel.loadDetail(nodeId: nodeId)
+                viewModel.refreshDetail(nodeId: nodeId)
             }
 
             commentInputBar
@@ -363,19 +363,23 @@ struct DetailView: View {
                         )
                         .textFieldStyle(.roundedBorder)
 
-                        Button(action: {
-                            viewModel.submitComment()
-                        }) {
-                            Image(systemName: "paperplane.fill")
-                                .foregroundColor(.appPrimary)
+                        if viewModel.isCommentSubmitting {
+                            ProgressView()
                                 .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
+                        } else {
+                            Button(action: {
+                                viewModel.submitComment()
+                            }) {
+                                Image(systemName: "paperplane.fill")
+                                    .foregroundColor(.appPrimary)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .disabled(
+                                viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            )
+                            .accessibilityLabel("コメントを送信")
                         }
-                        .disabled(
-                            viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                || viewModel.isCommentSubmitting
-                        )
-                        .accessibilityLabel("コメントを送信")
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)

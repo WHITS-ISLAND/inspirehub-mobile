@@ -118,6 +118,36 @@ class DetailViewModel(
     }
 
     /**
+     * コンテンツを保持したままリフレッシュ（pull-to-refresh用）
+     */
+    fun refreshDetail(nodeId: String) {
+        viewModelScope.launch {
+            _error.value = null
+
+            val nodeDeferred = async { nodeRepository.getNode(nodeId) }
+            val commentsDeferred = async { commentRepository.getComments(nodeId) }
+            val childNodesDeferred = async { nodeRepository.getChildNodes(nodeId) }
+
+            val nodeResult = nodeDeferred.await()
+            val commentsResult = commentsDeferred.await()
+            val childNodesResult = childNodesDeferred.await()
+
+            if (nodeResult.isSuccess) {
+                nodeStore.selectNode(nodeResult.getOrNull())
+            }
+
+            if (commentsResult.isSuccess) {
+                _comments.value = (commentsResult.getOrNull() ?: emptyList())
+                    .sortedByDescending { it.createdAt }
+            }
+
+            if (childNodesResult.isSuccess) {
+                _childNodes.value = childNodesResult.getOrNull() ?: emptyList()
+            }
+        }
+    }
+
+    /**
      * リアクションを切り替え（楽観的更新）
      */
     fun toggleReaction(type: ReactionType) {
