@@ -41,8 +41,8 @@ struct DetailView: View {
                 bodySection(node: node)
                 metaSection(node: node)
 
-                if node.parentNodeId != nil {
-                    parentSection(parentNodeId: node.parentNodeId!)
+                if let parentNode = node.parentNode {
+                    parentSection(parentNode: parentNode)
                 }
 
                 reactionBar(node: node)
@@ -100,20 +100,31 @@ struct DetailView: View {
 
     // MARK: - Parent Node
 
-    private func parentSection(parentNodeId: String) -> some View {
-        NavigationLink(destination: DetailView(nodeId: parentNodeId)) {
+    private func parentSection(parentNode: ParentNode) -> some View {
+        NavigationLink(destination: DetailView(nodeId: parentNode.id)) {
             HStack(spacing: 8) {
-                Image(systemName: "arrow.turn.up.left")
-                    .foregroundColor(.blue)
-                Text("派生元ノードを見る")
-                    .font(.subheadline)
-                    .foregroundColor(.blue)
+                Image(systemName: parentNode.type == .issue ? "exclamationmark.triangle.fill" : "lightbulb.fill")
+                    .foregroundColor(parentNode.type == .issue ? .orange : .yellow)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("派生元")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(parentNode.title)
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                        .lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.blue.opacity(0.05))
             .cornerRadius(8)
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Reactions
@@ -124,16 +135,16 @@ struct DetailView: View {
                 VStack(spacing: 2) {
                     Text("👍")
                         .font(.title3)
-                    Text(node.likeCount > 0 ? "いいね \(node.likeCount)" : "いいね")
+                    Text(node.reactions.like.count > 0 ? "いいね \(node.reactions.like.count)" : "いいね")
                         .font(.system(size: 9))
-                        .foregroundColor(node.isLiked ? .blue : .secondary)
+                        .foregroundColor(node.reactions.like.isReacted ? .blue : .secondary)
                 }
             }
             .buttonStyle(.plain)
 
-            reactionButton(emoji: "💡", label: "共感") { }
+            reactionButton(emoji: "💡", label: node.reactions.interested.count > 0 ? "共感 \(node.reactions.interested.count)" : "共感") { }
             reactionButton(emoji: "👀", label: "気になる") { }
-            reactionButton(emoji: "🤝", label: "作りたい") { }
+            reactionButton(emoji: "🤝", label: node.reactions.wantToTry.count > 0 ? "作りたい \(node.reactions.wantToTry.count)" : "作りたい") { }
         }
         .padding(.vertical, 4)
     }

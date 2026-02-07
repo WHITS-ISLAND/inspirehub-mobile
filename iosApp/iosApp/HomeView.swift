@@ -194,6 +194,7 @@ struct HomeView: View {
 
 struct NodeCardView: View {
     let node: Node
+    @State private var isParentExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -218,18 +219,69 @@ struct NodeCardView: View {
                 .multilineTextAlignment(.leading)
 
             HStack(spacing: 12) {
-                Label("\(node.likeCount)", systemImage: node.isLiked ? "hand.thumbsup.fill" : "hand.thumbsup")
+                Label("\(node.reactions.like.count)", systemImage: node.reactions.like.isReacted ? "hand.thumbsup.fill" : "hand.thumbsup")
                     .font(.caption2)
-                    .foregroundColor(node.isLiked ? .blue : .secondary)
+                    .foregroundColor(node.reactions.like.isReacted ? .blue : .secondary)
                 Label("\(node.commentCount)", systemImage: "bubble.right")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+            }
+
+            if let parentNode = node.parentNode {
+                parentNodeBadge(parentNode)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
+    }
+
+    // MARK: - Parent Node Badge
+
+    private func parentNodeBadge(_ parentNode: ParentNode) -> some View {
+        Button(action: {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isParentExpanded.toggle()
+            }
+        }) {
+            VStack(alignment: .leading, spacing: isParentExpanded ? 6 : 0) {
+                HStack(spacing: 6) {
+                    Image(systemName: parentNode.type == .issue ? "exclamationmark.triangle.fill" : "lightbulb.fill")
+                        .font(.caption2)
+                        .foregroundColor(parentNode.type == .issue ? .orange : .yellow)
+                    Text("派生元")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(parentNode.title)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: isParentExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                if isParentExpanded {
+                    NavigationLink(destination: DetailView(nodeId: parentNode.id)) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.turn.up.left")
+                                .font(.caption2)
+                            Text("派生元を見る")
+                                .font(.caption2)
+                        }
+                        .foregroundColor(.blue)
+                    }
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.tertiarySystemBackground))
+            .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
     }
 
     private var nodeTypeBadge: some View {
@@ -248,9 +300,12 @@ struct NodeCardView: View {
         .cornerRadius(6)
     }
 
-    private func formatDate(_ instant: Kotlinx_datetimeInstant) -> String {
-        let seconds = instant.epochSeconds
-        let date = Date(timeIntervalSince1970: TimeInterval(seconds))
+    private func formatDate(_ dateString: String) -> String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        guard let date = isoFormatter.date(from: dateString) ?? ISO8601DateFormatter().date(from: dateString) else {
+            return dateString
+        }
         let formatter = RelativeDateTimeFormatter()
         formatter.locale = Locale(identifier: "ja_JP")
         formatter.unitsStyle = .short
@@ -271,6 +326,13 @@ struct NodeCardView: View {
         .padding()
 }
 
+#Preview("NodeCardView - Derived") {
+    NavigationStack {
+        NodeCardView(node: PreviewData.sampleDerivedNode)
+            .padding()
+    }
+}
+
 enum PreviewData {
     static var sampleNode: Node {
         Node(
@@ -279,13 +341,18 @@ enum PreviewData {
             title: "サンプルアイデア",
             content: "これはプレビュー用のサンプルノードです。実際のデータではありません。",
             authorId: "user-1",
-            parentNodeId: nil,
-            tagIds: [],
-            likeCount: 5,
-            isLiked: true,
+            authorName: "テストユーザー",
+            authorPicture: nil,
+            parentNode: nil,
+            tagIds: ["tag-1", "tag-2"],
+            reactions: Reactions(
+                like: ReactionSummary(count: 5, isReacted: true),
+                interested: ReactionSummary(count: 3, isReacted: false),
+                wantToTry: ReactionSummary(count: 1, isReacted: false)
+            ),
             commentCount: 3,
-            createdAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970), nanosecondAdjustment: 0),
-            updatedAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970), nanosecondAdjustment: 0)
+            createdAt: "2025-01-15T10:30:00Z",
+            updatedAt: nil
         )
     }
 
@@ -296,13 +363,40 @@ enum PreviewData {
             title: "サンプル課題",
             content: "リモートワークで雑談の機会が減っている。チームの一体感が薄れている。",
             authorId: "user-2",
-            parentNodeId: nil,
-            tagIds: [],
-            likeCount: 12,
-            isLiked: false,
+            authorName: "課題提起者",
+            authorPicture: nil,
+            parentNode: nil,
+            tagIds: ["tag-3"],
+            reactions: Reactions(
+                like: ReactionSummary(count: 12, isReacted: false),
+                interested: ReactionSummary(count: 8, isReacted: true),
+                wantToTry: ReactionSummary(count: 2, isReacted: false)
+            ),
             commentCount: 7,
-            createdAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970) - 3600, nanosecondAdjustment: 0),
-            updatedAt: Kotlinx_datetimeInstant.companion.fromEpochSeconds(epochSeconds: Int64(Date().timeIntervalSince1970) - 3600, nanosecondAdjustment: 0)
+            createdAt: "2025-01-15T09:30:00Z",
+            updatedAt: nil
+        )
+    }
+
+    static var sampleDerivedNode: Node {
+        Node(
+            id: "preview-3",
+            type: .idea,
+            title: "雑談チャンネル自動生成ツール",
+            content: "曜日ごとにランダムでペアを組んで雑談チャンネルを自動生成するSlackボットを作る。",
+            authorId: "user-1",
+            authorName: "テストユーザー",
+            authorPicture: nil,
+            parentNode: ParentNode(id: "preview-2", type: .issue, title: "サンプル課題"),
+            tagIds: ["tag-1"],
+            reactions: Reactions(
+                like: ReactionSummary(count: 8, isReacted: false),
+                interested: ReactionSummary(count: 5, isReacted: true),
+                wantToTry: ReactionSummary(count: 3, isReacted: false)
+            ),
+            commentCount: 5,
+            createdAt: "2025-01-15T11:00:00Z",
+            updatedAt: nil
         )
     }
 }

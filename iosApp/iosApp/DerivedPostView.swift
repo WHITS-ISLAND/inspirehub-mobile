@@ -107,7 +107,7 @@ struct DerivedPostView: View {
             .onAppear {
                 viewModel.setParentNode(node: parentNode)
             }
-            .onChange(of: isSuccess) { newValue in
+            .onChange(of: isSuccess) { _, newValue in
                 if newValue {
                     dismiss()
                 }
