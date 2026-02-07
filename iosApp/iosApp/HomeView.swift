@@ -404,7 +404,7 @@ enum PreviewData {
             authorId: "user-1",
             authorName: "テストユーザー",
             authorPicture: nil,
-            parentNode: ParentNode(id: "preview-2", type: .issue, title: "サンプル課題"),
+            parentNode: ParentNode(id: "preview-2", type: .issue, title: "サンプル課題", content: "これはサンプルの課題内容です。"),
             tagIds: ["tag-1"],
             reactions: Reactions(
                 like: ReactionSummary(count: 8, isReacted: false),

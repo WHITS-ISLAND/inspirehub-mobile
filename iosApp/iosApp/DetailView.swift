@@ -125,17 +125,8 @@ struct DetailView: View {
 
     // MARK: - Parent Node
 
-    /// 派生元ノードのcontentをchildNodesやselectedNodeの情報から解決する
-    private func resolveParentContent(parentId: String) -> String? {
-        // childNodesにparentが含まれるケースはないが、将来NodeStoreのnodes公開時に拡張可能
-        // 現在はParentNodeモデルにcontentがないためnilを返す
-        return nil
-    }
-
     private func parentSection(parentNode: ParentNode) -> some View {
-        let parentContent = resolveParentContent(parentId: parentNode.id)
-
-        return NavigationLink(destination: DetailView(nodeId: parentNode.id)) {
+        NavigationLink(destination: DetailView(nodeId: parentNode.id)) {
             HStack(spacing: 10) {
                 Image(systemName: NodeTypeStyle.icon(for: parentNode.type))
                     .font(.title3)
@@ -155,10 +146,10 @@ struct DetailView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
                         .lineLimit(2)
-                    if let content = parentContent {
+                    if let content = parentNode.content, !content.isEmpty {
                         Text(content)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                             .lineLimit(3)
                     }
                 }
