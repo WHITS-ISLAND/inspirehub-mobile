@@ -5,7 +5,9 @@ import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.ViewModel
 import com.rickclephas.kmp.observableviewmodel.launch
 import io.github.witsisland.inspirehub.domain.model.Node
+import io.github.witsisland.inspirehub.domain.model.ReactionType
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
+import io.github.witsisland.inspirehub.domain.repository.ReactionRepository
 import io.github.witsisland.inspirehub.domain.store.HomeTab
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.SortOrder
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class HomeViewModel(
     private val nodeStore: NodeStore,
     private val nodeRepository: NodeRepository,
+    private val reactionRepository: ReactionRepository,
     private val userStore: UserStore
 ) : ViewModel() {
 
@@ -89,13 +92,13 @@ class HomeViewModel(
         _nodes.value = nodeStore.getFilteredNodes(currentUserId)
     }
 
-    fun toggleLike(nodeId: String) {
+    fun toggleReaction(nodeId: String, type: ReactionType) {
         viewModelScope.launch {
-            val result = nodeRepository.toggleLike(nodeId)
+            val result = reactionRepository.toggleReaction(nodeId, type)
             if (result.isSuccess) {
                 loadNodes()
             } else {
-                _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle like"
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle reaction"
             }
         }
     }

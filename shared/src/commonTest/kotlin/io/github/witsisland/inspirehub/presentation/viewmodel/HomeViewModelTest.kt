@@ -5,7 +5,9 @@ import io.github.witsisland.inspirehub.domain.model.Node
 import io.github.witsisland.inspirehub.domain.model.NodeType
 import io.github.witsisland.inspirehub.domain.model.Reactions
 import io.github.witsisland.inspirehub.domain.model.ReactionSummary
+import io.github.witsisland.inspirehub.domain.model.ReactionType
 import io.github.witsisland.inspirehub.domain.repository.FakeNodeRepository
+import io.github.witsisland.inspirehub.domain.repository.FakeReactionRepository
 import io.github.witsisland.inspirehub.domain.store.HomeTab
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.domain.store.SortOrder
@@ -24,6 +26,7 @@ class HomeViewModelTest : MainDispatcherRule() {
 
     private lateinit var viewModel: HomeViewModel
     private lateinit var fakeNodeRepository: FakeNodeRepository
+    private lateinit var fakeReactionRepository: FakeReactionRepository
     private lateinit var nodeStore: NodeStore
     private lateinit var userStore: UserStore
 
@@ -69,15 +72,17 @@ class HomeViewModelTest : MainDispatcherRule() {
     @BeforeTest
     fun setup() {
         fakeNodeRepository = FakeNodeRepository()
+        fakeReactionRepository = FakeReactionRepository()
         nodeStore = NodeStore()
         userStore = UserStore()
-        viewModel = HomeViewModel(nodeStore, fakeNodeRepository, userStore)
+        viewModel = HomeViewModel(nodeStore, fakeNodeRepository, fakeReactionRepository, userStore)
     }
 
     @AfterTest
     fun tearDown() {
         nodeStore.clear()
         fakeNodeRepository.reset()
+        fakeReactionRepository.reset()
     }
 
     @Test
@@ -180,26 +185,26 @@ class HomeViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleLike - いいね切り替えが成功すること`() = runTest {
+    fun `toggleReaction - リアクション切り替えが成功すること`() = runTest {
         fakeNodeRepository.getNodesResult = Result.success(sampleNodes)
-        val toggledNode = sampleNodes[0].copy(
-            reactions = Reactions(like = ReactionSummary(count = 6, isReacted = true))
+        fakeReactionRepository.toggleReactionResult = Result.success(
+            ReactionSummary(count = 6, isReacted = true)
         )
-        fakeNodeRepository.toggleLikeResult = Result.success(toggledNode)
 
-        viewModel.toggleLike("node1")
+        viewModel.toggleReaction("node1", ReactionType.LIKE)
 
-        assertEquals(1, fakeNodeRepository.toggleLikeCallCount)
-        assertEquals("node1", fakeNodeRepository.lastToggleLikeNodeId)
+        assertEquals(1, fakeReactionRepository.toggleReactionCallCount)
+        assertEquals("node1", fakeReactionRepository.lastToggleReactionNodeId)
+        assertEquals(ReactionType.LIKE, fakeReactionRepository.lastToggleReactionType)
         assertNull(viewModel.error.value)
     }
 
     @Test
-    fun `toggleLike - 失敗時にエラーが設定されること`() = runTest {
-        val errorMessage = "Like failed"
-        fakeNodeRepository.toggleLikeResult = Result.failure(Exception(errorMessage))
+    fun `toggleReaction - 失敗時にエラーが設定されること`() = runTest {
+        val errorMessage = "Reaction failed"
+        fakeReactionRepository.toggleReactionResult = Result.failure(Exception(errorMessage))
 
-        viewModel.toggleLike("node1")
+        viewModel.toggleReaction("node1", ReactionType.INTERESTED)
 
         assertEquals(errorMessage, viewModel.error.value)
     }

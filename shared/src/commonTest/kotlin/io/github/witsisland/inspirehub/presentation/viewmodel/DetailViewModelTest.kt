@@ -7,8 +7,10 @@ import io.github.witsisland.inspirehub.domain.model.NodeType
 import io.github.witsisland.inspirehub.domain.model.ParentNode
 import io.github.witsisland.inspirehub.domain.model.Reactions
 import io.github.witsisland.inspirehub.domain.model.ReactionSummary
+import io.github.witsisland.inspirehub.domain.model.ReactionType
 import io.github.witsisland.inspirehub.domain.repository.FakeCommentRepository
 import io.github.witsisland.inspirehub.domain.repository.FakeNodeRepository
+import io.github.witsisland.inspirehub.domain.repository.FakeReactionRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
 import io.github.witsisland.inspirehub.test.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
@@ -25,6 +27,7 @@ class DetailViewModelTest : MainDispatcherRule() {
     private lateinit var viewModel: DetailViewModel
     private lateinit var fakeNodeRepository: FakeNodeRepository
     private lateinit var fakeCommentRepository: FakeCommentRepository
+    private lateinit var fakeReactionRepository: FakeReactionRepository
     private lateinit var nodeStore: NodeStore
 
     private val sampleNode = Node(
@@ -81,8 +84,9 @@ class DetailViewModelTest : MainDispatcherRule() {
     fun setup() {
         fakeNodeRepository = FakeNodeRepository()
         fakeCommentRepository = FakeCommentRepository()
+        fakeReactionRepository = FakeReactionRepository()
         nodeStore = NodeStore()
-        viewModel = DetailViewModel(nodeStore, fakeNodeRepository, fakeCommentRepository)
+        viewModel = DetailViewModel(nodeStore, fakeNodeRepository, fakeCommentRepository, fakeReactionRepository)
     }
 
     @AfterTest
@@ -90,6 +94,7 @@ class DetailViewModelTest : MainDispatcherRule() {
         nodeStore.clear()
         fakeNodeRepository.reset()
         fakeCommentRepository.reset()
+        fakeReactionRepository.reset()
     }
 
     @Test
@@ -141,17 +146,21 @@ class DetailViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleLike - いいね切り替えが成功すること`() = runTest {
+    fun `toggleReaction - リアクション切り替えが成功すること`() = runTest {
         nodeStore.selectNode(sampleNode)
         val likedNode = sampleNode.copy(
             reactions = Reactions(like = ReactionSummary(count = 6, isReacted = true))
         )
-        fakeNodeRepository.toggleLikeResult = Result.success(likedNode)
+        fakeReactionRepository.toggleReactionResult = Result.success(
+            ReactionSummary(count = 6, isReacted = true)
+        )
+        fakeNodeRepository.getNodeResult = Result.success(likedNode)
 
-        viewModel.toggleLike()
+        viewModel.toggleReaction(ReactionType.LIKE)
 
-        assertEquals(1, fakeNodeRepository.toggleLikeCallCount)
-        assertEquals("node1", fakeNodeRepository.lastToggleLikeNodeId)
+        assertEquals(1, fakeReactionRepository.toggleReactionCallCount)
+        assertEquals("node1", fakeReactionRepository.lastToggleReactionNodeId)
+        assertEquals(ReactionType.LIKE, fakeReactionRepository.lastToggleReactionType)
         assertNull(viewModel.error.value)
         viewModel.selectedNode.test {
             assertEquals(likedNode, awaitItem())
@@ -159,19 +168,19 @@ class DetailViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleLike - 選択ノードがない場合は何もしないこと`() = runTest {
-        viewModel.toggleLike()
+    fun `toggleReaction - 選択ノードがない場合は何もしないこと`() = runTest {
+        viewModel.toggleReaction(ReactionType.LIKE)
 
-        assertEquals(0, fakeNodeRepository.toggleLikeCallCount)
+        assertEquals(0, fakeReactionRepository.toggleReactionCallCount)
     }
 
     @Test
-    fun `toggleLike - 失敗時にエラーが設定されること`() = runTest {
+    fun `toggleReaction - 失敗時にエラーが設定されること`() = runTest {
         nodeStore.selectNode(sampleNode)
-        val errorMessage = "Like failed"
-        fakeNodeRepository.toggleLikeResult = Result.failure(Exception(errorMessage))
+        val errorMessage = "Reaction failed"
+        fakeReactionRepository.toggleReactionResult = Result.failure(Exception(errorMessage))
 
-        viewModel.toggleLike()
+        viewModel.toggleReaction(ReactionType.WANT_TO_TRY)
 
         assertEquals(errorMessage, viewModel.error.value)
     }
