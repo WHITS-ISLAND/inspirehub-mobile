@@ -409,12 +409,15 @@ struct DetailView: View {
 
     private func commentRow(comment: Comment) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(spacing: 4) {
                 Image(systemName: "person.circle")
                     .foregroundColor(.secondary)
-                Text(comment.authorId)
+                Text(comment.authorName)
                     .font(.caption)
                     .fontWeight(.semibold)
+                Text("・\(relativeTime(from: comment.createdAt))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Spacer()
             }
             Text(comment.content)
@@ -423,6 +426,18 @@ struct DetailView: View {
         .padding(10)
         .background(Color(.secondarySystemBackground))
         .cornerRadius(8)
+    }
+
+    private func relativeTime(from isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = formatter.date(from: isoString)
+            ?? ISO8601DateFormatter().date(from: isoString)
+        guard let date else { return "" }
+        let relativeFormatter = RelativeDateTimeFormatter()
+        relativeFormatter.locale = Locale(identifier: "ja_JP")
+        relativeFormatter.unitsStyle = .short
+        return relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 }
 #Preview("DetailView") {

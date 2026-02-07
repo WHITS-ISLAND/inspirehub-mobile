@@ -193,10 +193,8 @@ class DetailViewModel(
             )
 
             if (result.isSuccess) {
-                // サーバーからコメント一覧を再取得して確実に反映
-                val commentsResult = commentRepository.getComments(nodeId)
-                if (commentsResult.isSuccess) {
-                    _comments.value = (commentsResult.getOrNull() ?: emptyList())
+                result.getOrNull()?.let { comment ->
+                    _comments.value = (_comments.value + comment)
                         .sortedByDescending { it.createdAt }
                 }
             } else {
