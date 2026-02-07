@@ -46,46 +46,6 @@ class AuthViewModel(
     @NativeCoroutinesState
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _authUrl = MutableStateFlow(viewModelScope, null as String?)
-    @NativeCoroutinesState
-    val authUrl: StateFlow<String?> = _authUrl.asStateFlow()
-
-    /**
-     * Google OAuth URL を取得
-     */
-    fun getGoogleAuthUrl() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            val result = authRepository.getGoogleAuthUrl()
-            if (result.isSuccess) {
-                _authUrl.value = result.getOrNull()
-            } else {
-                _error.value = result.exceptionOrNull()?.message ?: "Failed to get auth URL"
-            }
-
-            _isLoading.value = false
-        }
-    }
-
-    /**
-     * OAuth認可コードでログイン
-     */
-    fun loginWithAuthCode(code: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            val result = authRepository.loginWithAuthCode(code)
-            if (result.isFailure) {
-                _error.value = result.exceptionOrNull()?.message ?: "Login failed"
-            }
-
-            _isLoading.value = false
-        }
-    }
-
     /**
      * 現在のユーザー情報を取得
      */

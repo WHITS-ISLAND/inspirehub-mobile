@@ -22,35 +22,10 @@ class UserStore {
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
-    // PKCE用のcode_verifierを一時保存
-    private var _codeVerifier: String? = null
-
-    /**
-     * PKCE用のcode_verifierを保存
-     */
-    fun saveCodeVerifier(codeVerifier: String) {
-        _codeVerifier = codeVerifier
-    }
-
-    /**
-     * PKCE用のcode_verifierを取得してクリア
-     */
-    fun getAndClearCodeVerifier(): String? {
-        val verifier = _codeVerifier
-        _codeVerifier = null
-        return verifier
-    }
-
     /**
      * ログイン状態を設定
      */
     fun login(user: User, accessToken: String, refreshToken: String) {
-        println("=== UserStore.login() ===")
-        println("User: ${user.handle} (id: ${user.id})")
-        println("Access Token: ${accessToken.take(20)}...")
-        println("Refresh Token: ${refreshToken.take(20)}...")
-        println("======================")
-
         _currentUser.value = user
         _accessToken.value = accessToken
         _refreshToken.value = refreshToken

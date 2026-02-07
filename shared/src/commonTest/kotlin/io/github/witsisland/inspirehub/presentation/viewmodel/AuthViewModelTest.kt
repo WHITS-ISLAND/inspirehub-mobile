@@ -40,91 +40,42 @@ class AuthViewModelTest : MainDispatcherRule() {
     }
 
     // ========================================
-    // getGoogleAuthUrl のテスト
+    // verifyGoogleToken のテスト
     // ========================================
 
     @Test
-    fun `getGoogleAuthUrl - 成功時にauthUrlが更新されること`() = runTest {
+    fun `verifyGoogleToken - ID Tokenの検証が成功すること`() = runTest {
         // Given
-        val expectedUrl = "https://accounts.google.com/oauth"
-        fakeAuthRepository.getGoogleAuthUrlResult = Result.success(expectedUrl)
-
-        // When
-        viewModel.getGoogleAuthUrl()
-
-        // Then
-        assertEquals(expectedUrl, viewModel.authUrl.value)
-        assertFalse(viewModel.isLoading.value)
-        assertNull(viewModel.error.value)
-        assertEquals(1, fakeAuthRepository.getGoogleAuthUrlCallCount)
-    }
-
-    @Test
-    fun `getGoogleAuthUrl - 失敗時にエラーが設定されること`() = runTest {
-        // Given
-        val errorMessage = "Network error"
-        fakeAuthRepository.getGoogleAuthUrlResult = Result.failure(
-            Exception(errorMessage)
-        )
-
-        // When
-        viewModel.getGoogleAuthUrl()
-
-        // Then
-        assertNull(viewModel.authUrl.value)
-        assertEquals(errorMessage, viewModel.error.value)
-        assertFalse(viewModel.isLoading.value)
-    }
-
-    @Test
-    fun `getGoogleAuthUrl - 処理完了後にloadingがfalseになること`() = runTest {
-        // Given
-        fakeAuthRepository.getGoogleAuthUrlResult = Result.success("url")
-
-        // When
-        viewModel.getGoogleAuthUrl()
-
-        // Then: UnconfinedTestDispatcherを使用しているため、処理は即座に完了
-        assertFalse(viewModel.isLoading.value)
-    }
-
-    // ========================================
-    // loginWithAuthCode のテスト
-    // ========================================
-
-    @Test
-    fun `loginWithAuthCode - 認可コードでログインが成功すること`() = runTest {
-        // Given
-        val authCode = "test-auth-code"
+        val idToken = "test-id-token"
         val mockUser = User(
             id = "user123",
             handle = "testuser",
             roleTag = "Backend",
             createdAt = Clock.System.now()
         )
-        fakeAuthRepository.loginWithAuthCodeResult = Result.success(mockUser)
+        fakeAuthRepository.verifyGoogleTokenResult = Result.success(mockUser)
 
         // When
-        viewModel.loginWithAuthCode(authCode)
+        viewModel.verifyGoogleToken(idToken)
 
         // Then
         assertFalse(viewModel.isLoading.value)
         assertNull(viewModel.error.value)
-        assertEquals(1, fakeAuthRepository.loginWithAuthCodeCallCount)
-        assertEquals(authCode, fakeAuthRepository.lastAuthCode)
+        assertEquals(1, fakeAuthRepository.verifyGoogleTokenCallCount)
+        assertEquals(idToken, fakeAuthRepository.lastIdToken)
     }
 
     @Test
-    fun `loginWithAuthCode - 失敗時にエラーが設定されること`() = runTest {
+    fun `verifyGoogleToken - 失敗時にエラーが設定されること`() = runTest {
         // Given
-        val authCode = "invalid-code"
-        val errorMessage = "Invalid authorization code"
-        fakeAuthRepository.loginWithAuthCodeResult = Result.failure(
+        val idToken = "invalid-token"
+        val errorMessage = "Token verification failed"
+        fakeAuthRepository.verifyGoogleTokenResult = Result.failure(
             Exception(errorMessage)
         )
 
         // When
-        viewModel.loginWithAuthCode(authCode)
+        viewModel.verifyGoogleToken(idToken)
 
         // Then
         assertEquals(errorMessage, viewModel.error.value)
@@ -212,10 +163,10 @@ class AuthViewModelTest : MainDispatcherRule() {
     @Test
     fun `clearError - エラー状態がクリアされること`() = runTest {
         // Given: エラー状態を作る
-        fakeAuthRepository.getGoogleAuthUrlResult = Result.failure(
+        fakeAuthRepository.verifyGoogleTokenResult = Result.failure(
             Exception("Test error")
         )
-        viewModel.getGoogleAuthUrl()
+        viewModel.verifyGoogleToken("dummy-token")
         assertNotNull(viewModel.error.value)
 
         // When

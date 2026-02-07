@@ -8,19 +8,6 @@ import io.github.witsisland.inspirehub.data.dto.UserDto
  */
 interface AuthDataSource {
     /**
-     * Google OAuth URL を取得
-     * @return OAuth認証URL
-     */
-    suspend fun getGoogleAuthUrl(): String
-
-    /**
-     * OAuth認可コードを交換してトークンを取得
-     * @param code 認可コード
-     * @return トークンレスポンス
-     */
-    suspend fun exchangeAuthCode(code: String): TokenResponseDto
-
-    /**
      * Google ID Tokenを検証してトークンを取得（SDK方式）
      * @param idToken Google ID Token
      * @return トークンレスポンス

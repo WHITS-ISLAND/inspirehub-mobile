@@ -14,18 +14,9 @@ class AuthRepositoryImpl(
     private val userStore: UserStore
 ) : AuthRepository {
 
-    override suspend fun getGoogleAuthUrl(): Result<String> {
+    override suspend fun verifyGoogleToken(idToken: String): Result<User> {
         return try {
-            val url = authDataSource.getGoogleAuthUrl()
-            Result.success(url)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun loginWithAuthCode(code: String): Result<User> {
-        return try {
-            val tokenResponse = authDataSource.exchangeAuthCode(code)
+            val tokenResponse = authDataSource.verifyGoogleToken(idToken)
             val user = tokenResponse.user.toDomain()
 
             // UserStore にログイン状態を保存
@@ -85,24 +76,6 @@ class AuthRepositoryImpl(
         } catch (e: Exception) {
             // ログアウトAPIが失敗してもローカルの状態はクリア
             userStore.logout()
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun verifyGoogleToken(idToken: String): Result<User> {
-        return try {
-            val tokenResponse = authDataSource.verifyGoogleToken(idToken)
-            val user = tokenResponse.user.toDomain()
-
-            // UserStore にログイン状態を保存
-            userStore.login(
-                user = user,
-                accessToken = tokenResponse.accessToken,
-                refreshToken = tokenResponse.refreshToken
-            )
-
-            Result.success(user)
-        } catch (e: Exception) {
             Result.failure(e)
         }
     }

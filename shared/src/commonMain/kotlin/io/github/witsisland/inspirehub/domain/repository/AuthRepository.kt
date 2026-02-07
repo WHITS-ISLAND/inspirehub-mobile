@@ -7,18 +7,6 @@ import io.github.witsisland.inspirehub.domain.model.User
  */
 interface AuthRepository {
     /**
-     * Google OAuth 認証URLを取得
-     */
-    suspend fun getGoogleAuthUrl(): Result<String>
-
-    /**
-     * OAuth認可コードを交換してログイン
-     * @param code 認可コード
-     * @return ログインしたユーザー
-     */
-    suspend fun loginWithAuthCode(code: String): Result<User>
-
-    /**
      * Google ID Tokenを検証してログイン（SDK方式）
      * @param idToken Google ID Token
      * @return ログインしたユーザー

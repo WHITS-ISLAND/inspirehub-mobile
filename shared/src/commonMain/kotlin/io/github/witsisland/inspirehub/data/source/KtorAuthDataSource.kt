@@ -1,60 +1,34 @@
 package io.github.witsisland.inspirehub.data.source
 
-import io.github.witsisland.inspirehub.data.auth.PkceGenerator
+import co.touchlab.kermit.Logger
 import io.github.witsisland.inspirehub.data.dto.TokenResponseDto
 import io.github.witsisland.inspirehub.data.dto.UserDto
-import io.github.witsisland.inspirehub.domain.store.UserStore
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.ktor.http.*
 
 /**
  * Ktor Client を使用した AuthDataSource 実装
  */
 class KtorAuthDataSource(
-    private val httpClient: HttpClient,
-    private val userStore: UserStore
+    private val httpClient: HttpClient
 ) : AuthDataSource {
 
-    companion object {
-        // Google OAuthの仕様によりHTTPS URLが必要
-        private const val REDIRECT_URI = "https://api.inspirehub.wtnqk.org/auth/callback"
-    }
+    private val log = Logger.withTag("KtorAuthDataSource")
 
-    override suspend fun getGoogleAuthUrl(): String {
-        // PKCE パラメータを生成
-        val codeVerifier = PkceGenerator.generateCodeVerifier()
-        val codeChallenge = PkceGenerator.generateCodeChallenge(codeVerifier)
-
-        // デバッグログ
-        println("=== PKCE Parameters ===")
-        println("code_verifier: $codeVerifier")
-        println("code_challenge: $codeChallenge")
-        println("redirect_uri: $REDIRECT_URI")
-
-        // code_verifierを保存（後でトークン交換時に使用）
-        userStore.saveCodeVerifier(codeVerifier)
-
-        // APIリクエスト
-        val response: Map<String, String> = httpClient.get("/auth/google/url") {
-            parameter("code_challenge", codeChallenge)
-            parameter("code_challenge_method", "S256")
-            parameter("redirect_uri", REDIRECT_URI)
-        }.body()
-
-        println("=== API Response ===")
-        println("response: $response")
-        val url = response["url"] ?: throw IllegalStateException("OAuth URL not found in response")
-        println("OAuth URL: $url")
-
-        return url
-    }
-
-    override suspend fun exchangeAuthCode(code: String): TokenResponseDto {
-        return httpClient.get("/auth/google/callback") {
-            parameter("code", code)
-        }.body()
+    override suspend fun verifyGoogleToken(idToken: String): TokenResponseDto {
+        val response = httpClient.post("/auth/verify") {
+            contentType(ContentType.Application.Json)
+            setBody(mapOf("id_token" to idToken))
+        }
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            log.e { "verifyGoogleToken failed (${response.status.value}): $errorBody" }
+            throw IllegalStateException("IDトークン検証失敗 (${response.status.value}): $errorBody")
+        }
+        return response.body()
     }
 
     override suspend fun refreshToken(refreshToken: String): TokenResponseDto {
@@ -70,15 +44,5 @@ class KtorAuthDataSource(
 
     override suspend fun logout() {
         httpClient.post("/auth/logout")
-    }
-
-    override suspend fun verifyGoogleToken(idToken: String): TokenResponseDto {
-        println("=== Verify Google Token ===")
-        println("ID Token: ${idToken.take(20)}...")
-
-        return httpClient.post("/auth/google/verify") {
-            contentType(ContentType.Application.Json)
-            setBody(mapOf("id_token" to idToken))
-        }.body()
     }
 }

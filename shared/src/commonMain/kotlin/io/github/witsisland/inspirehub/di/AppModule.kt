@@ -46,7 +46,7 @@ val appModule = module {
     }
 
     // DataSource（シングルトン）
-    single<AuthDataSource> { KtorAuthDataSource(get(), get()) }
+    single<AuthDataSource> { KtorAuthDataSource(get()) }
     single<NodeDataSource> { MockNodeDataSource() }
     single<CommentDataSource> { MockCommentDataSource() }
 
