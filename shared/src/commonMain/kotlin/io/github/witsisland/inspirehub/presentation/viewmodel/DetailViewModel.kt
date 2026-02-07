@@ -11,6 +11,7 @@ import io.github.witsisland.inspirehub.domain.repository.CommentRepository
 import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.repository.ReactionRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
+import io.github.witsisland.inspirehub.domain.store.UserStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +24,8 @@ class DetailViewModel(
     private val nodeStore: NodeStore,
     private val nodeRepository: NodeRepository,
     private val commentRepository: CommentRepository,
-    private val reactionRepository: ReactionRepository
+    private val reactionRepository: ReactionRepository,
+    private val userStore: UserStore
 ) : ViewModel() {
 
     // NodeStoreの選択状態をVM側のMutableStateFlowに転写
@@ -142,12 +144,28 @@ class DetailViewModel(
     }
 
     /**
-     * コメントを投稿
+     * コメントを投稿（楽観的更新）
      */
     fun submitComment() {
         val nodeId = selectedNode.value?.id ?: return
         val text = _commentText.value.trim()
         if (text.isEmpty()) return
+
+        val currentUser = userStore.currentUser.value
+        val optimisticId = "temp-${kotlin.random.Random.nextLong()}"
+        val optimisticComment = Comment(
+            id = optimisticId,
+            nodeId = nodeId,
+            parentId = null,
+            authorId = currentUser?.id ?: "",
+            authorName = currentUser?.handle ?: "",
+            content = text,
+            createdAt = ""
+        )
+
+        // 楽観的更新: 即座にUIに反映
+        _commentText.value = ""
+        _comments.value = listOf(optimisticComment) + _comments.value
 
         viewModelScope.launch {
             _isCommentSubmitting.value = true
@@ -159,11 +177,16 @@ class DetailViewModel(
             )
 
             if (result.isSuccess) {
-                _commentText.value = ""
                 result.getOrNull()?.let { comment ->
-                    _comments.value = listOf(comment) + _comments.value
+                    // 楽観的コメントを実際のコメントで置換
+                    _comments.value = _comments.value.map {
+                        if (it.id == optimisticId) comment else it
+                    }
                 }
             } else {
+                // 失敗時: 楽観的コメントを除去してテキストを復元
+                _comments.value = _comments.value.filter { it.id != optimisticId }
+                _commentText.value = text
                 _error.value = result.exceptionOrNull()?.message ?: "Failed to post comment"
             }
 

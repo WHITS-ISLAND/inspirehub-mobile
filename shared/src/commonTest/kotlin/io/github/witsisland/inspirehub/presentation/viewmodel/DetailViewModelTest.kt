@@ -12,6 +12,7 @@ import io.github.witsisland.inspirehub.domain.repository.FakeCommentRepository
 import io.github.witsisland.inspirehub.domain.repository.FakeNodeRepository
 import io.github.witsisland.inspirehub.domain.repository.FakeReactionRepository
 import io.github.witsisland.inspirehub.domain.store.NodeStore
+import io.github.witsisland.inspirehub.domain.store.UserStore
 import io.github.witsisland.inspirehub.test.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
@@ -29,6 +30,7 @@ class DetailViewModelTest : MainDispatcherRule() {
     private lateinit var fakeCommentRepository: FakeCommentRepository
     private lateinit var fakeReactionRepository: FakeReactionRepository
     private lateinit var nodeStore: NodeStore
+    private lateinit var userStore: UserStore
 
     private val sampleNode = Node(
         id = "node1",
@@ -86,7 +88,8 @@ class DetailViewModelTest : MainDispatcherRule() {
         fakeCommentRepository = FakeCommentRepository()
         fakeReactionRepository = FakeReactionRepository()
         nodeStore = NodeStore()
-        viewModel = DetailViewModel(nodeStore, fakeNodeRepository, fakeCommentRepository, fakeReactionRepository)
+        userStore = UserStore()
+        viewModel = DetailViewModel(nodeStore, fakeNodeRepository, fakeCommentRepository, fakeReactionRepository, userStore)
     }
 
     @AfterTest
@@ -244,7 +247,7 @@ class DetailViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `submitComment - 失敗時にエラーが設定されること`() = runTest {
+    fun `submitComment - 失敗時にエラーが設定されテキストが復元されること`() = runTest {
         nodeStore.selectNode(sampleNode)
         viewModel.updateCommentText("テストコメント")
         val errorMessage = "Comment post failed"
@@ -254,6 +257,9 @@ class DetailViewModelTest : MainDispatcherRule() {
 
         assertEquals(errorMessage, viewModel.error.value)
         assertFalse(viewModel.isCommentSubmitting.value)
+        // 楽観的更新の失敗時: テキストが復元され、楽観的コメントが除去される
+        assertEquals("テストコメント", viewModel.commentText.value)
+        assertFalse(viewModel.comments.value.any { it.content == "テストコメント" })
     }
 
     @Test

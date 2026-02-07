@@ -12,6 +12,7 @@ struct DetailView: View {
     @State private var showDerivedPost = false
     @Environment(\.isAuthenticated) private var isAuthenticated
     @Environment(\.loginRequired) private var loginRequired
+    @Environment(\.fabHiddenBinding) private var fabHiddenBinding
 
     var body: some View {
         Group {
@@ -37,7 +38,11 @@ struct DetailView: View {
         .navigationTitle("詳細")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            fabHiddenBinding.wrappedValue = true
             viewModel.loadDetail(nodeId: nodeId)
+        }
+        .onDisappear {
+            fabHiddenBinding.wrappedValue = false
         }
     }
 
