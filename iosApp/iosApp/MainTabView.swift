@@ -5,6 +5,9 @@ private enum PostType {
 }
 
 struct MainTabView: View {
+    let isAuthenticated: Bool
+    let onLoginRequired: () -> Void
+
     @State private var selectedTab = 0
     @State private var showPostTypeSheet = false
     @State private var showIssuePost = false
@@ -32,19 +35,32 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-                NavigationStack {
-                    MyPageView()
+                if isAuthenticated {
+                    NavigationStack {
+                        MyPageView()
+                    }
+                    .tabItem {
+                        Image(systemName: "person.fill")
+                        Text("マイページ")
+                    }
+                    .tag(2)
+                } else {
+                    loginPromptTab
+                        .tabItem {
+                            Image(systemName: "person.fill")
+                            Text("マイページ")
+                        }
+                        .tag(2)
                 }
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("マイページ")
-                }
-                .tag(2)
             }
 
             // FAB
             Button(action: {
-                showPostTypeSheet = true
+                if isAuthenticated {
+                    showPostTypeSheet = true
+                } else {
+                    onLoginRequired()
+                }
             }) {
                 Image(systemName: "plus")
                     .font(.title2)
@@ -82,12 +98,44 @@ struct MainTabView: View {
             IdeaPostView()
         }
     }
+
+    private var loginPromptTab: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "person.crop.circle.badge.questionmark")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+
+            Text("ログインして利用する")
+                .font(.title3)
+                .fontWeight(.semibold)
+
+            Text("マイページを利用するにはログインが必要です")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: onLoginRequired) {
+                Text("ログイン")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: 200)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
+    }
 }
 
 // MARK: - Preview
 
 #Preview("MainTabView") {
-    MainTabView()
+    MainTabView(isAuthenticated: true, onLoginRequired: {})
+}
+
+#Preview("MainTabView - Unauthenticated") {
+    MainTabView(isAuthenticated: false, onLoginRequired: {})
 }
 
 #Preview("PostTypeSelectSheet") {

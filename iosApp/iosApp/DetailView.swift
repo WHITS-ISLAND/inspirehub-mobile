@@ -6,6 +6,8 @@ struct DetailView: View {
     let nodeId: String
     @StateViewModel var viewModel = KoinHelper().getDetailViewModel()
     @State private var showDerivedPost = false
+    @Environment(\.isAuthenticated) private var isAuthenticated
+    @Environment(\.loginRequired) private var loginRequired
 
     var body: some View {
         Group {
@@ -120,7 +122,10 @@ struct DetailView: View {
 
     private func reactionBar(node: Node) -> some View {
         HStack(spacing: 16) {
-            Button(action: { viewModel.toggleReaction(type: .like) }) {
+            Button(action: {
+                guard isAuthenticated else { loginRequired(); return }
+                viewModel.toggleReaction(type: .like)
+            }) {
                 VStack(spacing: 2) {
                     Text("👍")
                         .font(.title3)
@@ -131,8 +136,12 @@ struct DetailView: View {
             }
             .buttonStyle(.plain)
 
-            reactionButton(emoji: "💡", label: "共感", count: node.reactions.interested.count) { }
-            reactionButton(emoji: "👀", label: "気になる", count: node.reactions.wantToTry.count) { }
+            reactionButton(emoji: "💡", label: "共感", count: node.reactions.interested.count) {
+                guard isAuthenticated else { loginRequired(); return }
+            }
+            reactionButton(emoji: "👀", label: "気になる", count: node.reactions.wantToTry.count) {
+                guard isAuthenticated else { loginRequired(); return }
+            }
         }
         .padding(.vertical, 4)
     }
@@ -154,6 +163,7 @@ struct DetailView: View {
 
     private func deriveButton(node: Node) -> some View {
         Button(action: {
+            guard isAuthenticated else { loginRequired(); return }
             showDerivedPost = true
         }) {
             HStack {
@@ -212,21 +222,37 @@ struct DetailView: View {
             Text("コメント")
                 .font(.headline)
 
-            // Comment input
-            HStack(spacing: 8) {
-                TextField("コメントを入力...", text: Binding(
-                    get: { viewModel.commentText },
-                    set: { viewModel.updateCommentText(text: $0) }
-                ))
-                    .textFieldStyle(.roundedBorder)
+            if isAuthenticated {
+                // Comment input
+                HStack(spacing: 8) {
+                    TextField("コメントを入力...", text: Binding(
+                        get: { viewModel.commentText },
+                        set: { viewModel.updateCommentText(text: $0) }
+                    ))
+                        .textFieldStyle(.roundedBorder)
 
-                Button(action: {
-                    viewModel.submitComment()
-                }) {
-                    Image(systemName: "paperplane.fill")
-                        .foregroundColor(.blue)
+                    Button(action: {
+                        viewModel.submitComment()
+                    }) {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.blue)
+                    }
+                    .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isCommentSubmitting)
                 }
-                .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isCommentSubmitting)
+            } else {
+                Button(action: loginRequired) {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                        Text("ログインしてコメントする")
+                            .font(.subheadline)
+                    }
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(8)
+                }
             }
 
             if viewModel.comments.isEmpty {
