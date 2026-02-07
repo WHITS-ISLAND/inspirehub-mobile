@@ -8,6 +8,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -27,8 +28,15 @@ class KtorCommentDataSource(
      * GET /nodes/{nodeId}/comments
      * Response: { "comments": [CommentDto], "total": number }
      */
-    override suspend fun getComments(nodeId: String): List<CommentDto> {
-        val response: CommentsResponseDto = httpClient.get("/nodes/$nodeId/comments").body()
+    override suspend fun getComments(
+        nodeId: String,
+        limit: Int,
+        offset: Int
+    ): List<CommentDto> {
+        val response: CommentsResponseDto = httpClient.get("/nodes/$nodeId/comments") {
+            parameter("limit", limit)
+            parameter("offset", offset)
+        }.body()
         return response.comments
     }
 

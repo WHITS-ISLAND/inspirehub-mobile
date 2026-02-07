@@ -22,7 +22,9 @@ class KtorTagDataSource(
      * Response: { "tags": [TagDto], "total": number }
      */
     override suspend fun getPopularTags(limit: Int): List<TagDto> {
-        val response: TagsResponseDto = httpClient.get("/tags/popular").body()
+        val response: TagsResponseDto = httpClient.get("/tags/popular") {
+            parameter("limit", limit)
+        }.body()
         return response.tags
     }
 
@@ -33,6 +35,7 @@ class KtorTagDataSource(
     override suspend fun suggestTags(query: String, limit: Int): List<TagDto> {
         val response: TagSuggestionsResponseDto = httpClient.get("/tags/suggest") {
             parameter("q", query)
+            parameter("limit", limit)
         }.body()
         return response.suggestions.map { suggestion ->
             TagDto(
