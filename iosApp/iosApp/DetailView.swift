@@ -6,6 +6,8 @@ struct DetailView: View {
     let nodeId: String
     @StateViewModel var viewModel = KoinHelper().getDetailViewModel()
     @State private var showDerivedPost = false
+    @Environment(\.isAuthenticated) private var isAuthenticated
+    @Environment(\.loginRequired) private var loginRequired
 
     var body: some View {
         Group {
@@ -181,6 +183,7 @@ struct DetailView: View {
                 count: node.reactions.like.count,
                 isReacted: node.reactions.like.isReacted
             ) {
+                guard isAuthenticated else { loginRequired(); return }
                 viewModel.toggleReaction(type: .like)
             }
 
@@ -190,6 +193,7 @@ struct DetailView: View {
                 count: node.reactions.interested.count,
                 isReacted: node.reactions.interested.isReacted
             ) {
+                guard isAuthenticated else { loginRequired(); return }
                 viewModel.toggleReaction(type: .interested)
             }
 
@@ -199,6 +203,7 @@ struct DetailView: View {
                 count: node.reactions.wantToTry.count,
                 isReacted: node.reactions.wantToTry.isReacted
             ) {
+                guard isAuthenticated else { loginRequired(); return }
                 viewModel.toggleReaction(type: .wantToTry)
             }
         }
@@ -225,6 +230,7 @@ struct DetailView: View {
 
     private func deriveButton(node: Node) -> some View {
         Button(action: {
+            guard isAuthenticated else { loginRequired(); return }
             showDerivedPost = true
         }) {
             HStack {
@@ -283,24 +289,40 @@ struct DetailView: View {
             Text("コメント")
                 .font(.headline)
 
-            // Comment input
-            HStack(spacing: 8) {
-                TextField("コメントを入力...", text: Binding(
-                    get: { viewModel.commentText },
-                    set: { viewModel.updateCommentText(text: $0) }
-                ))
-                    .textFieldStyle(.roundedBorder)
+            if isAuthenticated {
+                // Comment input
+                HStack(spacing: 8) {
+                    TextField("コメントを入力...", text: Binding(
+                        get: { viewModel.commentText },
+                        set: { viewModel.updateCommentText(text: $0) }
+                    ))
+                        .textFieldStyle(.roundedBorder)
 
-                Button(action: {
-                    viewModel.submitComment()
-                }) {
-                    Image(systemName: "paperplane.fill")
-                        .foregroundColor(.blue)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+                    Button(action: {
+                        viewModel.submitComment()
+                    }) {
+                        Image(systemName: "paperplane.fill")
+                            .foregroundColor(.blue)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isCommentSubmitting)
+                    .accessibilityLabel("コメントを送信")
                 }
-                .disabled(viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isCommentSubmitting)
-                .accessibilityLabel("コメントを送信")
+            } else {
+                Button(action: loginRequired) {
+                    HStack {
+                        Image(systemName: "lock.fill")
+                            .font(.caption)
+                        Text("ログインしてコメントする")
+                            .font(.subheadline)
+                    }
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(8)
+                }
             }
 
             if viewModel.comments.isEmpty {

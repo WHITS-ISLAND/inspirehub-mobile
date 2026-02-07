@@ -5,11 +5,15 @@ private enum PostType {
 }
 
 struct MainTabView: View {
+    let isAuthenticated: Bool
+    let onLoginRequired: () -> Void
+
     @State private var selectedTab = 0
     @State private var showPostTypeSheet = false
     @State private var showIssuePost = false
     @State private var showIdeaPost = false
     @State private var pendingPostType: PostType?
+    @State private var pendingPostAfterLogin = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -32,19 +36,33 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-                NavigationStack {
-                    MyPageView()
+                if isAuthenticated {
+                    NavigationStack {
+                        MyPageView()
+                    }
+                    .tabItem {
+                        Image(systemName: "person.fill")
+                        Text("マイページ")
+                    }
+                    .tag(2)
+                } else {
+                    loginPromptTab
+                        .tabItem {
+                            Image(systemName: "person.fill")
+                            Text("マイページ")
+                        }
+                        .tag(2)
                 }
-                .tabItem {
-                    Image(systemName: "person.fill")
-                    Text("マイページ")
-                }
-                .tag(2)
             }
 
             // FAB
             Button(action: {
-                showPostTypeSheet = true
+                if isAuthenticated {
+                    showPostTypeSheet = true
+                } else {
+                    pendingPostAfterLogin = true
+                    onLoginRequired()
+                }
             }) {
                 Image(systemName: "plus")
                     .font(.title2)
@@ -82,13 +100,57 @@ struct MainTabView: View {
         .fullScreenCover(isPresented: $showIdeaPost) {
             IdeaPostView()
         }
+        .onChange(of: isAuthenticated) { _, newValue in
+            if newValue && pendingPostAfterLogin {
+                pendingPostAfterLogin = false
+                // ログインシートのdismissアニメーション完了を待ってから表示
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    showPostTypeSheet = true
+                }
+            }
+        }
+        .onChange(of: selectedTab) { _, _ in
+            pendingPostAfterLogin = false
+        }
+    }
+
+    private var loginPromptTab: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "person.crop.circle.badge.questionmark")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+
+            Text("ログインして利用する")
+                .font(.title3)
+                .fontWeight(.semibold)
+
+            Text("マイページを利用するにはログインが必要です")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: onLoginRequired) {
+                Text("ログイン")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: 200)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
     }
 }
 
 // MARK: - Preview
 
 #Preview("MainTabView") {
-    MainTabView()
+    MainTabView(isAuthenticated: true, onLoginRequired: {})
+}
+
+#Preview("MainTabView - Unauthenticated") {
+    MainTabView(isAuthenticated: false, onLoginRequired: {})
 }
 
 #Preview("PostTypeSelectSheet") {
