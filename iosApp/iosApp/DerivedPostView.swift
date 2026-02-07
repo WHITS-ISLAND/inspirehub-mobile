@@ -15,6 +15,7 @@ struct DerivedPostView: View {
     private var isSubmitting: Bool { viewModel.isSubmitting as? Bool ?? false }
     private var error: String? { viewModel.error as? String }
     private var isSuccess: Bool { viewModel.isSuccess as? Bool ?? false }
+    private var isValid: Bool { viewModel.isValid as? Bool ?? false }
 
     var body: some View {
         NavigationStack {
@@ -68,7 +69,9 @@ struct DerivedPostView: View {
 
                     if !tags.isEmpty {
                         FlowLayout(tags: tags) { tag in
-                            TagChip(text: tag)
+                            RemovableTagChip(text: tag) {
+                                viewModel.removeTag(tag: tag)
+                            }
                         }
                     }
                 }
@@ -93,7 +96,7 @@ struct DerivedPostView: View {
                     Button("投稿") {
                         viewModel.submitDerived()
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                    .disabled(!isValid || isSubmitting)
                 }
             }
             .overlay {
@@ -107,7 +110,7 @@ struct DerivedPostView: View {
             .onAppear {
                 viewModel.setParentNode(node: parentNode)
             }
-            .onChange(of: isSuccess) { newValue in
+            .onChange(of: isSuccess) { _, newValue in
                 if newValue {
                     dismiss()
                 }

@@ -14,6 +14,7 @@ struct IssuePostView: View {
     private var isSubmitting: Bool { viewModel.isSubmitting as? Bool ?? false }
     private var error: String? { viewModel.error as? String }
     private var isSuccess: Bool { viewModel.isSuccess as? Bool ?? false }
+    private var isValid: Bool { viewModel.isValid as? Bool ?? false }
 
     var body: some View {
         NavigationStack {
@@ -48,7 +49,9 @@ struct IssuePostView: View {
 
                     if !tags.isEmpty {
                         FlowLayout(tags: tags) { tag in
-                            TagChip(text: tag)
+                            RemovableTagChip(text: tag) {
+                                viewModel.removeTag(tag: tag)
+                            }
                         }
                     }
                 }
@@ -73,7 +76,7 @@ struct IssuePostView: View {
                     Button("投稿") {
                         viewModel.submitIssue()
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || isSubmitting)
+                    .disabled(!isValid || isSubmitting)
                 }
             }
             .overlay {
@@ -84,7 +87,7 @@ struct IssuePostView: View {
                         .cornerRadius(12)
                 }
             }
-            .onChange(of: isSuccess) { newValue in
+            .onChange(of: isSuccess) { _, newValue in
                 if newValue {
                     dismiss()
                 }
@@ -97,6 +100,30 @@ struct IssuePostView: View {
         guard !trimmed.isEmpty else { return }
         viewModel.addTag(tag: trimmed)
         tagInput = ""
+    }
+}
+
+// MARK: - Removable Tag Chip
+
+struct RemovableTagChip: View {
+    let text: String
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(text)
+                .font(.caption)
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundColor(.blue.opacity(0.6))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color.blue.opacity(0.1))
+        .foregroundColor(.blue)
+        .cornerRadius(8)
     }
 }
 
