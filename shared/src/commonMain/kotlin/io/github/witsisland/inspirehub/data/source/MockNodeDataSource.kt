@@ -39,11 +39,13 @@ class MockNodeDataSource : NodeDataSource {
         title: String,
         content: String,
         type: String,
-        tags: List<String>
-    ): NodeDto {
+        tags: List<String>,
+        parentNodeId: String?
+    ): String {
         val now = "2026-02-01T12:00:00Z"
+        val id = "node_${nextId++}"
         val newNode = NodeDto(
-            id = "node_${nextId++}",
+            id = id,
             title = title,
             content = content,
             type = type,
@@ -58,7 +60,7 @@ class MockNodeDataSource : NodeDataSource {
             updatedAt = now
         )
         nodes.add(0, newNode)
-        return newNode
+        return id
     }
 
     override suspend fun updateNode(
@@ -82,23 +84,6 @@ class MockNodeDataSource : NodeDataSource {
         nodes.removeAll { it.id == id }
     }
 
-    override suspend fun toggleLike(id: String): NodeDto {
-        val index = nodes.indexOfFirst { it.id == id }
-        if (index == -1) throw NoSuchElementException("Node not found: $id")
-        val current = nodes[index]
-        val currentLike = current.reactions.like
-        val toggled = current.copy(
-            reactions = current.reactions.copy(
-                like = currentLike.copy(
-                    count = if (currentLike.isReacted) currentLike.count - 1 else currentLike.count + 1,
-                    isReacted = !currentLike.isReacted
-                )
-            )
-        )
-        nodes[index] = toggled
-        return toggled
-    }
-
     override suspend fun searchNodes(
         query: String,
         type: String?,
@@ -108,7 +93,7 @@ class MockNodeDataSource : NodeDataSource {
         val lowerQuery = query.lowercase()
         val filtered = nodes.filter { node ->
             val matchesQuery = node.title.lowercase().contains(lowerQuery) ||
-                node.content.lowercase().contains(lowerQuery)
+                node.content?.lowercase()?.contains(lowerQuery) == true
             val matchesType = type == null || node.type == type
             matchesQuery && matchesType
         }
