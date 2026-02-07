@@ -93,11 +93,17 @@ class HomeViewModel(
     }
 
     fun toggleReaction(nodeId: String, type: ReactionType) {
+        // 1. 即座にUI更新（楽観的更新）
+        nodeStore.updateNodeReaction(nodeId, type)
+        applyFilter()
+
+        // 2. バックグラウンドでAPI呼び出し
         viewModelScope.launch {
             val result = reactionRepository.toggleReaction(nodeId, type)
-            if (result.isSuccess) {
-                loadNodes()
-            } else {
+            if (result.isFailure) {
+                // 3. 失敗時はロールバック（再度トグルで元に戻す）
+                nodeStore.updateNodeReaction(nodeId, type)
+                applyFilter()
                 _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle reaction"
             }
         }

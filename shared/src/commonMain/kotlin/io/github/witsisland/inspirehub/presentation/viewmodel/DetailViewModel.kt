@@ -97,19 +97,20 @@ class DetailViewModel(
     }
 
     /**
-     * リアクションを切り替え
+     * リアクションを切り替え（楽観的更新）
      */
     fun toggleReaction(type: ReactionType) {
         val node = selectedNode.value ?: return
+
+        // 1. 即座にUI更新（楽観的更新）
+        nodeStore.updateNodeReaction(node.id, type)
+
+        // 2. バックグラウンドでAPI呼び出し
         viewModelScope.launch {
             val result = reactionRepository.toggleReaction(node.id, type)
-            if (result.isSuccess) {
-                // リアクション成功後にノード詳細を再取得して最新状態を反映
-                val nodeResult = nodeRepository.getNode(node.id)
-                if (nodeResult.isSuccess) {
-                    nodeStore.selectNode(nodeResult.getOrNull())
-                }
-            } else {
+            if (result.isFailure) {
+                // 3. 失敗時はロールバック（再度トグルで元に戻す）
+                nodeStore.updateNodeReaction(node.id, type)
                 _error.value = result.exceptionOrNull()?.message ?: "Failed to toggle reaction"
             }
         }
