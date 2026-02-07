@@ -18,6 +18,7 @@ kotlinx-serialization = "1.8.0"
 kotlinx-coroutines = "1.10.2"
 ktor = "3.0.3"
 kmp-nativecoroutines = "1.0.0"
+kermit = "2.0.8"
 kmp-observableviewmodel = "1.0.1"
 material3 = "1.10.0-alpha05"
 turbine = "1.2.1"
@@ -27,6 +28,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 kmp-observableviewmodel-core = { module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "kmp-observableviewmodel" }

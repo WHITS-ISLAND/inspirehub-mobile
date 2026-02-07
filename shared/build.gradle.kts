@@ -37,6 +37,7 @@ kotlin {
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.auth)
             implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kermit)
             implementation(libs.koin.core)
             implementation(libs.kmp.observableviewmodel.core)
         }
