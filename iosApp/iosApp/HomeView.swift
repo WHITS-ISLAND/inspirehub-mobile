@@ -222,10 +222,10 @@ struct NodeCardView: View {
                 tagChipsRow
             }
 
-            HStack(spacing: 12) {
-                Label("\(node.reactions.like.count)", systemImage: node.reactions.like.isReacted ? "hand.thumbsup.fill" : "hand.thumbsup")
-                    .font(.caption2)
-                    .foregroundColor(node.reactions.like.isReacted ? .blue : .secondary)
+            HStack(spacing: 10) {
+                inlineReaction(emoji: "👍", count: node.reactions.like.count, isReacted: node.reactions.like.isReacted)
+                inlineReaction(emoji: "🔥", count: node.reactions.interested.count, isReacted: node.reactions.interested.isReacted)
+                inlineReaction(emoji: "💪", count: node.reactions.wantToTry.count, isReacted: node.reactions.wantToTry.isReacted)
                 Label("\(node.commentCount)", systemImage: "bubble.right")
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -286,6 +286,18 @@ struct NodeCardView: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+    }
+
+    private func inlineReaction(emoji: String, count: Int32, isReacted: Bool) -> some View {
+        HStack(spacing: 2) {
+            Text(emoji)
+                .font(.caption2)
+            if count > 0 {
+                Text("\(count)")
+                    .font(.caption2)
+                    .foregroundColor(isReacted ? .blue : .secondary)
+            }
+        }
     }
 
     private var tagChipsRow: some View {

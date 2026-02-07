@@ -154,32 +154,44 @@ struct DetailView: View {
 
     private func reactionBar(node: Node) -> some View {
         HStack(spacing: 16) {
-            Button(action: { viewModel.toggleLike() }) {
-                VStack(spacing: 2) {
-                    Text("👍")
-                        .font(.title3)
-                    Text(node.reactions.like.count > 0 ? "いいね \(node.reactions.like.count)" : "いいね")
-                        .font(.system(size: 9))
-                        .foregroundColor(node.reactions.like.isReacted ? .blue : .secondary)
-                }
+            reactionButton(
+                emoji: "👍",
+                label: "いいね",
+                count: node.reactions.like.count,
+                isReacted: node.reactions.like.isReacted
+            ) {
+                viewModel.toggleReaction(type: .like)
             }
-            .buttonStyle(.plain)
 
-            reactionButton(emoji: "💡", label: node.reactions.interested.count > 0 ? "共感 \(node.reactions.interested.count)" : "共感") { }
-            reactionButton(emoji: "👀", label: "気になる") { }
-            reactionButton(emoji: "🤝", label: node.reactions.wantToTry.count > 0 ? "作りたい \(node.reactions.wantToTry.count)" : "作りたい") { }
+            reactionButton(
+                emoji: "🔥",
+                label: "気になる",
+                count: node.reactions.interested.count,
+                isReacted: node.reactions.interested.isReacted
+            ) {
+                viewModel.toggleReaction(type: .interested)
+            }
+
+            reactionButton(
+                emoji: "💪",
+                label: "やってみたい",
+                count: node.reactions.wantToTry.count,
+                isReacted: node.reactions.wantToTry.isReacted
+            ) {
+                viewModel.toggleReaction(type: .wantToTry)
+            }
         }
         .padding(.vertical, 4)
     }
 
-    private func reactionButton(emoji: String, label: String, action: @escaping () -> Void) -> some View {
+    private func reactionButton(emoji: String, label: String, count: Int32, isReacted: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(emoji)
                     .font(.title3)
-                Text(label)
+                Text(count > 0 ? "\(label) \(count)" : label)
                     .font(.system(size: 9))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(isReacted ? .blue : .secondary)
             }
         }
         .buttonStyle(.plain)
