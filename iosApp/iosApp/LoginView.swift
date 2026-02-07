@@ -60,6 +60,12 @@ struct LoginView: View {
                     .padding(.top, 8)
             }
 
+            Button("テスト用ログイン（DEV）") {
+                viewModel.mockLogin()
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+
             Spacer()
         }
     }
@@ -67,40 +73,28 @@ struct LoginView: View {
     private func handleGoogleSignIn() {
         signInError = nil
 
-        #if DEBUG
-        // Phase1: モック認証（Google OAuth未設定のため）
-        viewModel.mockLogin()
-        return
-        #endif
-
-        // === 以下は本来のGoogle Sign-In処理（そのまま残す） ===
-        print("=== Google Sign-In Started ===")
-
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
               let rootViewController = windowScene.windows.first?.rootViewController else {
-            print("Error: Could not find root view controller")
+            signInError = "画面の取得に失敗しました"
             return
         }
 
         GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController) { result, error in
-            if let error = error {
-                print("Google Sign-In Error: \(error.localizedDescription)")
+            if let error = error as? NSError {
+                // ユーザーがキャンセルした場合はエラー表示しない
+                if error.domain == "com.google.GIDSignIn" && error.code == -5 {
+                    return
+                }
                 signInError = error.localizedDescription
                 return
             }
 
-            guard let user = result?.user,
-                  let idToken = user.idToken?.tokenString else {
-                print("Error: Could not get ID token")
+            guard let idToken = result?.user.idToken?.tokenString else {
                 signInError = "認証情報の取得に失敗しました"
                 return
             }
 
-            print("=== Google Sign-In Success ===")
-            print("ID Token: \(idToken.prefix(20))...")
-            print("User Email: \(user.profile?.email ?? "unknown")")
-
-            // ViewModelでID tokenをバックエンドに送信
+            // バックエンドでID tokenを検証してログイン
             viewModel.verifyGoogleToken(idToken: idToken)
         }
     }

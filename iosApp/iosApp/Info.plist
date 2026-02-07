@@ -4,16 +4,6 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
-
-	<!-- TestFlight配信時のExport Complianceダイアログを省略 -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-
-	<!-- Google Sign-In Configuration -->
-	<key>GIDClientID</key>
-	<string>605273458355-9c4cvk0o5nhpdrkknj4m98voh712enr9.apps.googleusercontent.com</string>
-
-	<!-- URL Scheme for Google Sign-In callback -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -21,9 +11,11 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.605273458355-9c4cvk0o5nhpdrkknj4m98voh712enr9</string>
+				<string>com.googleusercontent.apps.605273458355-q4vj4146v5s9oclqiaf2gmnqtqfanraj</string>
 			</array>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>605273458355-q4vj4146v5s9oclqiaf2gmnqtqfanraj.apps.googleusercontent.com</string>
 </dict>
 </plist>
