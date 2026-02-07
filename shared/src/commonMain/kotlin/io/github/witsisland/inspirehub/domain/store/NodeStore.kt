@@ -2,6 +2,7 @@ package io.github.witsisland.inspirehub.domain.store
 
 import io.github.witsisland.inspirehub.domain.model.Node
 import io.github.witsisland.inspirehub.domain.model.NodeType
+import io.github.witsisland.inspirehub.domain.model.ReactionType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -73,6 +74,45 @@ class NodeStore {
                     node.reactions.wantToTry.count
             }
         }
+    }
+
+    /**
+     * ノードのリアクション状態をメモリ上でトグルする（楽観的更新用）
+     */
+    fun updateNodeReaction(nodeId: String, reactionType: ReactionType) {
+        _nodes.value = _nodes.value.map { node ->
+            if (node.id == nodeId) toggleNodeReaction(node, reactionType) else node
+        }
+        _selectedNode.value?.let { selected ->
+            if (selected.id == nodeId) {
+                _selectedNode.value = toggleNodeReaction(selected, reactionType)
+            }
+        }
+    }
+
+    private fun toggleNodeReaction(node: Node, reactionType: ReactionType): Node {
+        val reactions = node.reactions
+        val updatedReactions = when (reactionType) {
+            ReactionType.LIKE -> reactions.copy(
+                like = reactions.like.copy(
+                    count = if (reactions.like.isReacted) reactions.like.count - 1 else reactions.like.count + 1,
+                    isReacted = !reactions.like.isReacted
+                )
+            )
+            ReactionType.INTERESTED -> reactions.copy(
+                interested = reactions.interested.copy(
+                    count = if (reactions.interested.isReacted) reactions.interested.count - 1 else reactions.interested.count + 1,
+                    isReacted = !reactions.interested.isReacted
+                )
+            )
+            ReactionType.WANT_TO_TRY -> reactions.copy(
+                wantToTry = reactions.wantToTry.copy(
+                    count = if (reactions.wantToTry.isReacted) reactions.wantToTry.count - 1 else reactions.wantToTry.count + 1,
+                    isReacted = !reactions.wantToTry.isReacted
+                )
+            )
+        }
+        return node.copy(reactions = updatedReactions)
     }
 
     fun clear() {

@@ -185,14 +185,21 @@ class HomeViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleReaction - リアクション切り替えが成功すること`() = runTest {
+    fun `toggleReaction - 楽観的更新でUI即座反映されること`() = runTest {
         fakeNodeRepository.getNodesResult = Result.success(sampleNodes)
+        viewModel.loadNodes()
         fakeReactionRepository.toggleReactionResult = Result.success(
             ReactionSummary(count = 6, isReacted = true)
         )
 
         viewModel.toggleReaction("node1", ReactionType.LIKE)
 
+        // 楽観的更新でcount+1, isReacted=trueになっている
+        val updatedNode = viewModel.nodes.value.find { it.id == "node1" }!!
+        assertEquals(6, updatedNode.reactions.like.count)
+        assertTrue(updatedNode.reactions.like.isReacted)
+
+        // API呼び出しも行われている
         assertEquals(1, fakeReactionRepository.toggleReactionCallCount)
         assertEquals("node1", fakeReactionRepository.lastToggleReactionNodeId)
         assertEquals(ReactionType.LIKE, fakeReactionRepository.lastToggleReactionType)
@@ -200,12 +207,22 @@ class HomeViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleReaction - 失敗時にエラーが設定されること`() = runTest {
+    fun `toggleReaction - 失敗時にロールバックされること`() = runTest {
+        fakeNodeRepository.getNodesResult = Result.success(sampleNodes)
+        viewModel.loadNodes()
         val errorMessage = "Reaction failed"
         fakeReactionRepository.toggleReactionResult = Result.failure(Exception(errorMessage))
 
+        val originalNode = viewModel.nodes.value.find { it.id == "node1" }!!
+        val originalCount = originalNode.reactions.interested.count
+        val originalIsReacted = originalNode.reactions.interested.isReacted
+
         viewModel.toggleReaction("node1", ReactionType.INTERESTED)
 
+        // 失敗時はロールバック（元の値に戻る）
+        val rolledBackNode = viewModel.nodes.value.find { it.id == "node1" }!!
+        assertEquals(originalCount, rolledBackNode.reactions.interested.count)
+        assertEquals(originalIsReacted, rolledBackNode.reactions.interested.isReacted)
         assertEquals(errorMessage, viewModel.error.value)
     }
 

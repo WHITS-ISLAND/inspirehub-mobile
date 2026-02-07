@@ -146,25 +146,25 @@ class DetailViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleReaction - リアクション切り替えが成功すること`() = runTest {
+    fun `toggleReaction - 楽観的更新でUI即座反映されること`() = runTest {
         nodeStore.selectNode(sampleNode)
-        val likedNode = sampleNode.copy(
-            reactions = Reactions(like = ReactionSummary(count = 6, isReacted = true))
-        )
         fakeReactionRepository.toggleReactionResult = Result.success(
             ReactionSummary(count = 6, isReacted = true)
         )
-        fakeNodeRepository.getNodeResult = Result.success(likedNode)
 
         viewModel.toggleReaction(ReactionType.LIKE)
+
+        // 楽観的更新でcount+1, isReacted=trueになっている
+        viewModel.selectedNode.test {
+            val node = awaitItem()!!
+            assertEquals(6, node.reactions.like.count)
+            assertTrue(node.reactions.like.isReacted)
+        }
 
         assertEquals(1, fakeReactionRepository.toggleReactionCallCount)
         assertEquals("node1", fakeReactionRepository.lastToggleReactionNodeId)
         assertEquals(ReactionType.LIKE, fakeReactionRepository.lastToggleReactionType)
         assertNull(viewModel.error.value)
-        viewModel.selectedNode.test {
-            assertEquals(likedNode, awaitItem())
-        }
     }
 
     @Test
@@ -175,13 +175,19 @@ class DetailViewModelTest : MainDispatcherRule() {
     }
 
     @Test
-    fun `toggleReaction - 失敗時にエラーが設定されること`() = runTest {
+    fun `toggleReaction - 失敗時にロールバックされること`() = runTest {
         nodeStore.selectNode(sampleNode)
         val errorMessage = "Reaction failed"
         fakeReactionRepository.toggleReactionResult = Result.failure(Exception(errorMessage))
 
         viewModel.toggleReaction(ReactionType.WANT_TO_TRY)
 
+        // 失敗時はロールバック（元の値に戻る）
+        viewModel.selectedNode.test {
+            val node = awaitItem()!!
+            assertEquals(0, node.reactions.wantToTry.count)
+            assertFalse(node.reactions.wantToTry.isReacted)
+        }
         assertEquals(errorMessage, viewModel.error.value)
     }
 
