@@ -82,7 +82,7 @@ class AuthViewModel(
             handle = "テストユーザー",
             email = "test@example.com",
             picture = null,
-            roleTag = "Engineer"
+            roleTag = null
         )
         userStore.login(mockUser, "mock_access_token", "mock_refresh_token")
     }
