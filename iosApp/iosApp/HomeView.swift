@@ -218,6 +218,10 @@ struct NodeCardView: View {
                 .lineLimit(3)
                 .multilineTextAlignment(.leading)
 
+            if !node.tagIds.isEmpty {
+                tagChipsRow
+            }
+
             HStack(spacing: 12) {
                 Label("\(node.reactions.like.count)", systemImage: node.reactions.like.isReacted ? "hand.thumbsup.fill" : "hand.thumbsup")
                     .font(.caption2)
@@ -282,6 +286,22 @@ struct NodeCardView: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+    }
+
+    private var tagChipsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(node.tagIds, id: \.self) { tagId in
+                    Text("#\(tagId)")
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.blue.opacity(0.08))
+                        .foregroundColor(.blue)
+                        .cornerRadius(6)
+                }
+            }
+        }
     }
 
     private var nodeTypeBadge: some View {

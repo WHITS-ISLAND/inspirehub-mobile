@@ -39,6 +39,11 @@ struct DetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 headerSection(node: node)
                 bodySection(node: node)
+
+                if !node.tagIds.isEmpty {
+                    tagChipsSection(node: node)
+                }
+
                 metaSection(node: node)
 
                 if let parentNode = node.parentNode {
@@ -82,6 +87,24 @@ struct DetailView: View {
         Text(node.content)
             .font(.body)
             .lineSpacing(4)
+    }
+
+    // MARK: - Tags
+
+    private func tagChipsSection(node: Node) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(node.tagIds, id: \.self) { tagId in
+                    Text("#\(tagId)")
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Color.blue.opacity(0.1))
+                        .foregroundColor(.blue)
+                        .cornerRadius(8)
+                }
+            }
+        }
     }
 
     // MARK: - Meta
