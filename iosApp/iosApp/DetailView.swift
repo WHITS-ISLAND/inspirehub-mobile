@@ -114,10 +114,15 @@ struct DetailView: View {
     private func metaSection(node: Node) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Divider()
-            HStack(spacing: 16) {
-                Label("\(node.authorName)：\(node.authorId)", systemImage: "person")
+            HStack(spacing: 6) {
+                Image(systemName: "person")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                Text("\(node.authorName)：\(node.authorId)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             Divider()
         }
