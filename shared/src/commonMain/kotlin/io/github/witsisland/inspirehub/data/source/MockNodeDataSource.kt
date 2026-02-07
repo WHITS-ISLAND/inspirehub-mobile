@@ -93,7 +93,7 @@ class MockNodeDataSource : NodeDataSource {
         val lowerQuery = query.lowercase()
         val filtered = nodes.filter { node ->
             val matchesQuery = node.title.lowercase().contains(lowerQuery) ||
-                node.content.lowercase().contains(lowerQuery)
+                node.content?.lowercase()?.contains(lowerQuery) == true
             val matchesType = type == null || node.type == type
             matchesQuery && matchesType
         }

@@ -20,7 +20,7 @@ fun NodeDto.toDomain(): Node {
             else -> NodeType.IDEA
         },
         title = title,
-        content = content,
+        content = content ?: "",
         authorId = authorId,
         authorName = authorName,
         authorPicture = authorPicture,
