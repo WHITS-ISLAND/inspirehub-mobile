@@ -10,6 +10,7 @@ import io.github.witsisland.inspirehub.domain.repository.FakeNodeRepository
 import io.github.witsisland.inspirehub.domain.repository.FakeTagRepository
 import io.github.witsisland.inspirehub.domain.store.DiscoverStore
 import io.github.witsisland.inspirehub.test.MainDispatcherRule
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -87,6 +88,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeNodeRepository.searchNodesResult = Result.success(sampleNodes)
 
         viewModel.search("テスト")
+        advanceUntilIdle()
 
         assertEquals(1, fakeNodeRepository.searchNodesCallCount)
         assertEquals("テスト", fakeNodeRepository.lastSearchQuery)
@@ -121,6 +123,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeNodeRepository.searchNodesResult = Result.failure(Exception(errorMessage))
 
         viewModel.search("テスト")
+        advanceUntilIdle()
 
         assertEquals(errorMessage, viewModel.error.value)
         assertFalse(viewModel.isLoading.value)
@@ -131,6 +134,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeNodeRepository.searchNodesResult = Result.success(emptyList())
 
         viewModel.search("クエリテスト")
+        advanceUntilIdle()
 
         viewModel.searchQuery.test {
             assertEquals("クエリテスト", awaitItem())
@@ -192,6 +196,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         val tag = Tag(id = "tag1", name = "AI", usageCount = 50)
 
         viewModel.selectTag(tag)
+        advanceUntilIdle()
 
         assertEquals(1, fakeTagRepository.getNodesByTagNameCallCount)
         assertEquals("AI", fakeTagRepository.lastGetNodesByTagName)
@@ -257,6 +262,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeTagRepository.suggestTagsResult = Result.success(sampleTags)
 
         viewModel.search("#AI")
+        advanceUntilIdle()
 
         assertEquals(1, fakeTagRepository.suggestTagsCallCount)
         assertEquals("AI", fakeTagRepository.lastSuggestTagsQuery)
@@ -278,10 +284,12 @@ class DiscoverViewModelTest : MainDispatcherRule() {
     fun `search - #プレフィックスから通常テキストに戻るとサジェストがクリアされること`() = runTest {
         fakeTagRepository.suggestTagsResult = Result.success(sampleTags)
         viewModel.search("#AI")
+        advanceUntilIdle()
         assertEquals(sampleTags.size, viewModel.tagSuggestions.value.size)
 
         fakeNodeRepository.searchNodesResult = Result.success(sampleNodes)
         viewModel.search("普通の検索")
+        advanceUntilIdle()
 
         assertTrue(viewModel.tagSuggestions.value.isEmpty())
         assertEquals(1, fakeNodeRepository.searchNodesCallCount)
@@ -293,6 +301,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         val tag = Tag(id = "tag1", name = "AI", usageCount = 50)
 
         viewModel.selectTagSuggestion(tag)
+        advanceUntilIdle()
 
         assertTrue(viewModel.tagSuggestions.value.isEmpty())
         assertEquals("", viewModel.searchQuery.value)
@@ -307,8 +316,10 @@ class DiscoverViewModelTest : MainDispatcherRule() {
 
         // まず#AIで検索してサジェストを取得
         viewModel.search("#AI")
+        advanceUntilIdle()
         // Enterで確定
         viewModel.submitSearch()
+        advanceUntilIdle()
 
         // サジェストにAIが含まれるのでselectTagが呼ばれる
         assertTrue(viewModel.tagSuggestions.value.isEmpty())
@@ -322,7 +333,9 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeTagRepository.getNodesByTagNameResult = Result.success(sampleNodes)
 
         viewModel.search("#新タグ")
+        advanceUntilIdle()
         viewModel.submitSearch()
+        advanceUntilIdle()
 
         assertEquals("新タグ", viewModel.selectedTag.value?.name)
         assertEquals(sampleNodes.size, viewModel.tagNodes.value.size)
@@ -333,8 +346,10 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeNodeRepository.searchNodesResult = Result.success(sampleNodes)
 
         viewModel.search("テスト")
+        advanceUntilIdle()
         val callCountBefore = fakeNodeRepository.searchNodesCallCount
         viewModel.submitSearch()
+        advanceUntilIdle()
 
         // submitSearchは通常検索では何も追加しない
         assertEquals(callCountBefore, fakeNodeRepository.searchNodesCallCount)
@@ -345,6 +360,7 @@ class DiscoverViewModelTest : MainDispatcherRule() {
         fakeNodeRepository.searchNodesResult = Result.success(sampleNodes)
 
         viewModel.search("テスト")
+        advanceUntilIdle()
 
         assertEquals(sampleNodes, discoverStore.searchResults.value)
     }

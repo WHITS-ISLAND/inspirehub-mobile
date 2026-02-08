@@ -14,6 +14,7 @@ struct DetailView: View {
     @Environment(\.isAuthenticated) private var isAuthenticated
     @Environment(\.currentUserId) private var currentUserId
     @Environment(\.loginRequired) private var loginRequired
+    @Environment(\.fabHiddenBinding) private var fabHiddenBinding
     @Environment(\.dismiss) private var dismiss
 
     private var isOwner: Bool {
@@ -93,7 +94,11 @@ struct DetailView: View {
             Text("この投稿を削除しますか？この操作は取り消せません。")
         }
         .onAppear {
+            fabHiddenBinding.wrappedValue = true
             viewModel.loadDetail(nodeId: nodeId)
+        }
+        .onDisappear {
+            fabHiddenBinding.wrappedValue = false
         }
     }
 
@@ -182,28 +187,33 @@ struct DetailView: View {
     // MARK: - Detail Content
 
     private func nodeDetailContent(node: Node) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                headerSection(node: node)
-                bodySection(node: node)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    headerSection(node: node)
+                    bodySection(node: node)
 
-                if !node.tagIds.isEmpty {
-                    tagChipsSection(node: node)
+                    if !node.tagIds.isEmpty {
+                        tagChipsSection(node: node)
+                    }
+
+                    metaSection(node: node)
+
+                    reactionBar(node: node)
+                    deriveButton(node: node)
+
+                    derivationTreeSection(node: node)
+                    commentsSection
                 }
-
-                metaSection(node: node)
-
-                if let parentNode = node.parentNode {
-                    parentSection(parentNode: parentNode)
-                }
-
-                reactionBar(node: node)
-                deriveButton(node: node)
-                childNodesSection
-                commentsSection
+                .padding(16)
             }
-            .padding(16)
+            .refreshable {
+                viewModel.refreshDetail(nodeId: nodeId)
+            }
+
+            commentInputBar
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: - Header
@@ -264,7 +274,7 @@ struct DetailView: View {
                 Image(systemName: "person")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text("\(node.authorName)：\(node.authorId)")
+                Text(node.authorName)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(1)
@@ -274,47 +284,158 @@ struct DetailView: View {
         }
     }
 
-    // MARK: - Parent Node
+    // MARK: - Derivation Tree
 
-    private func parentSection(parentNode: ParentNode) -> some View {
-        NavigationLink(destination: DetailView(nodeId: parentNode.id)) {
-            HStack(spacing: 10) {
-                Image(systemName: NodeTypeStyle.icon(for: parentNode.type))
-                    .font(.title3)
-                    .foregroundColor(NodeTypeStyle.color(for: parentNode.type))
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Text("派生元")
-                            .font(.caption2)
+    private func derivationTreeSection(node: Node) -> some View {
+        let hasParent = node.parentNode != nil
+        let hasChildren = !viewModel.childNodes.isEmpty
+
+        return Group {
+            if hasParent || hasChildren {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Section header
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.triangle.branch")
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
-                        Text(NodeTypeStyle.label(for: parentNode.type))
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .foregroundColor(NodeTypeStyle.color(for: parentNode.type))
+                        Text("派生ツリー")
+                            .font(.headline)
                     }
-                    Text(parentNode.title)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary)
-                        .lineLimit(2)
-                    if let content = parentNode.content, !content.isEmpty {
-                        Text(content)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                    .padding(.bottom, 12)
+
+                    // Tree items
+                    VStack(alignment: .leading, spacing: 0) {
+                        if let parentNode = node.parentNode {
+                            let isLast = !hasChildren
+                            derivationTreeItem(
+                                label: "派生元",
+                                type: parentNode.type,
+                                title: parentNode.title,
+                                content: parentNode.content,
+                                nodeId: parentNode.id,
+                                isLast: isLast
+                            )
+                        }
+
+                        ForEach(Array(viewModel.childNodes.enumerated()), id: \.element.id) { index, child in
+                            let isLast = index == viewModel.childNodes.count - 1
+                            derivationTreeItem(
+                                label: "派生先",
+                                type: child.type,
+                                title: child.title,
+                                content: child.content,
+                                nodeId: child.id,
+                                isLast: isLast
+                            )
+                        }
                     }
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(NodeTypeStyle.color(for: parentNode.type).opacity(0.05))
-            .cornerRadius(8)
         }
-        .buttonStyle(.plain)
+    }
+
+    private func derivationTreeItem(
+        label: String,
+        type: NodeType,
+        title: String,
+        content: String?,
+        nodeId: String,
+        isLast: Bool
+    ) -> some View {
+        HStack(alignment: .top, spacing: 0) {
+            // Tree connector line
+            treeConnector(isLast: isLast)
+
+            // Card
+            NavigationLink(destination: DetailView(nodeId: nodeId)) {
+                derivationCard(
+                    label: label,
+                    type: type,
+                    title: title,
+                    content: content
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func treeConnector(isLast: Bool) -> some View {
+        VStack(spacing: 0) {
+            // Branch symbol: top vertical line + horizontal connector
+            HStack(alignment: .top, spacing: 0) {
+                // Vertical line (left side)
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.3))
+                    .frame(width: 2)
+
+                // Horizontal connector
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.3))
+                    .frame(width: 12, height: 2)
+                    .padding(.top, 18)
+            }
+            .frame(width: 14)
+
+            // Continuation line below (only if not last)
+            if !isLast {
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.3))
+                    .frame(width: 2)
+                    .frame(maxHeight: .infinity)
+                    .frame(width: 14, alignment: .leading)
+            } else {
+                Spacer()
+                    .frame(width: 14)
+            }
+        }
+        .padding(.trailing, 8)
+    }
+
+    private func derivationCard(
+        label: String,
+        type: NodeType,
+        title: String,
+        content: String?
+    ) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: NodeTypeStyle.icon(for: type))
+                .font(.title3)
+                .foregroundColor(NodeTypeStyle.color(for: type))
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text(NodeTypeStyle.label(for: type))
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundColor(NodeTypeStyle.color(for: type))
+                }
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .lineLimit(2)
+                if let content, !content.isEmpty {
+                    Text(content)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(NodeTypeStyle.color(for: type).opacity(0.05))
+        .cornerRadius(8)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Reactions
@@ -408,92 +529,32 @@ struct DetailView: View {
         }
     }
 
-    // MARK: - Child Nodes
-
-    private var childNodesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if !viewModel.childNodes.isEmpty {
-                Text("派生ノード")
-                    .font(.headline)
-
-                ForEach(viewModel.childNodes, id: \.id) { child in
-                    NavigationLink(destination: DetailView(nodeId: child.id)) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.turn.down.right")
-                                .foregroundColor(.appPrimary)
-                                .font(.caption)
-                            Text(child.title)
-                                .font(.subheadline)
-                                .lineLimit(1)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(10)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(8)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
 
     // MARK: - Comments
 
     private var commentsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("コメント")
-                .font(.headline)
-
-            if isAuthenticated {
-                // Comment input
-                HStack(spacing: 8) {
-                    TextField(
-                        "コメントを入力...",
-                        text: Binding(
-                            get: { viewModel.commentText },
-                            set: { viewModel.updateCommentText(text: $0) }
-                        )
-                    )
-                    .textFieldStyle(.roundedBorder)
-
-                    Button(action: {
-                        viewModel.submitComment()
-                    }) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(.appPrimary)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .disabled(
-                        viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            || viewModel.isCommentSubmitting
-                    )
-                    .accessibilityLabel("コメントを送信")
-                }
-            } else {
-                Button(action: loginRequired) {
-                    HStack {
-                        Image(systemName: "lock.fill")
-                            .font(.caption)
-                        Text("ログインしてコメントする")
-                            .font(.subheadline)
-                    }
-                    .foregroundColor(.appPrimary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.appPrimary.opacity(0.05))
-                    .cornerRadius(8)
+            HStack {
+                Text("コメント")
+                    .font(.headline)
+                if !viewModel.comments.isEmpty {
+                    Text("\(viewModel.comments.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
             }
 
             if viewModel.comments.isEmpty {
-                Text("まだコメントはありません")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 8)
+                VStack(spacing: 8) {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.system(size: 32))
+                        .foregroundColor(.secondary.opacity(0.5))
+                    Text("まだコメントはありません")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
             } else {
                 ForEach(viewModel.comments, id: \.id) { comment in
                     commentRow(comment: comment)
@@ -502,14 +563,78 @@ struct DetailView: View {
         }
     }
 
+    // MARK: - Comment Input Bar
+
+    private var commentInputBar: some View {
+        Group {
+            if isAuthenticated {
+                VStack(spacing: 0) {
+                    Divider()
+                    HStack(spacing: 8) {
+                        TextField(
+                            "コメントを入力...",
+                            text: Binding(
+                                get: { viewModel.commentText },
+                                set: { viewModel.updateCommentText(text: $0) }
+                            )
+                        )
+                        .textFieldStyle(.roundedBorder)
+
+                        if viewModel.isCommentSubmitting {
+                            ProgressView()
+                                .frame(width: 44, height: 44)
+                        } else {
+                            Button(action: {
+                                viewModel.submitComment()
+                            }) {
+                                Image(systemName: "paperplane.fill")
+                                    .foregroundColor(.appPrimary)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .disabled(
+                                viewModel.commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            )
+                            .accessibilityLabel("コメントを送信")
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
+                .background(Color(.systemBackground))
+            } else {
+                VStack(spacing: 0) {
+                    Divider()
+                    Button(action: loginRequired) {
+                        HStack {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                            Text("ログインしてコメントする")
+                                .font(.subheadline)
+                        }
+                        .foregroundColor(.appPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
+                .background(Color(.systemBackground))
+            }
+        }
+    }
+
     private func commentRow(comment: Comment) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(spacing: 4) {
                 Image(systemName: "person.circle")
                     .foregroundColor(.secondary)
-                Text(comment.authorId)
+                Text(comment.authorName)
                     .font(.caption)
                     .fontWeight(.semibold)
+                Text("・\(relativeTime(from: comment.createdAt))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 Spacer()
             }
             Text(comment.content)
@@ -518,6 +643,18 @@ struct DetailView: View {
         .padding(10)
         .background(Color(.secondarySystemBackground))
         .cornerRadius(8)
+    }
+
+    private func relativeTime(from isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = formatter.date(from: isoString)
+            ?? ISO8601DateFormatter().date(from: isoString)
+        guard let date else { return "" }
+        let relativeFormatter = RelativeDateTimeFormatter()
+        relativeFormatter.locale = Locale(identifier: "ja_JP")
+        relativeFormatter.unitsStyle = .short
+        return relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 }
 #Preview("DetailView") {

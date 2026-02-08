@@ -10,6 +10,7 @@ import io.github.witsisland.inspirehub.domain.repository.NodeRepository
 import io.github.witsisland.inspirehub.domain.repository.TagRepository
 import io.github.witsisland.inspirehub.domain.store.DiscoverStore
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -81,11 +82,15 @@ class DiscoverViewModel(
         }
     }
 
+    private var searchJob: Job? = null
+
     fun search(query: String) {
+        searchJob?.cancel()
         discoverStore.setSearchQuery(query)
 
         if (query.isBlank()) {
             _tagSuggestions.value = emptyList()
+            discoverStore.setLoading(false)
             discoverStore.updateSearchResults(emptyList())
             return
         }
@@ -100,6 +105,7 @@ class DiscoverViewModel(
             }
             tagSuggestJob?.cancel()
             tagSuggestJob = viewModelScope.launch {
+                delay(300) // debounce
                 val result = tagRepository.suggestTags(tagQuery)
                 if (result.isSuccess) {
                     _tagSuggestions.value = result.getOrThrow()
@@ -112,18 +118,17 @@ class DiscoverViewModel(
         _tagSuggestions.value = emptyList()
         discoverStore.setSelectedTag(null)
         discoverStore.updateTagNodes(emptyList())
+        discoverStore.setLoading(true)
+        _error.value = null
 
-        viewModelScope.launch {
-            discoverStore.setLoading(true)
-            _error.value = null
-
+        searchJob = viewModelScope.launch {
+            delay(300) // debounce: 入力中はAPI呼び出しを抑制
             val result = nodeRepository.searchNodes(query = query)
             if (result.isSuccess) {
                 discoverStore.updateSearchResults(result.getOrThrow())
             } else {
                 _error.value = result.exceptionOrNull()?.message ?: "Search failed"
             }
-
             discoverStore.setLoading(false)
         }
     }
