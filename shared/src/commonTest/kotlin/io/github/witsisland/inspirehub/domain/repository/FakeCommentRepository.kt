@@ -13,7 +13,7 @@ class FakeCommentRepository : CommentRepository {
     // 各メソッドの戻り値（nullの場合はcommentsリストから自動生成）
     var getCommentsResult: Result<List<Comment>>? = null
     var createCommentResult: Result<String>? = null
-    var updateCommentResult: Result<Comment>? = null
+    var updateCommentResult: Result<Unit>? = null
     var deleteCommentResult: Result<Unit>? = null
 
     // エラーシミュレート用フラグ
@@ -62,13 +62,13 @@ class FakeCommentRepository : CommentRepository {
         return createCommentResult ?: Result.success("comment_new")
     }
 
-    override suspend fun updateComment(id: String, content: String): Result<Comment> {
+    override suspend fun updateComment(id: String, content: String): Result<Unit> {
         updateCommentCallCount++
         lastUpdateCommentId = id
         lastUpdateCommentContent = content
 
         if (shouldReturnError) return Result.failure(Exception(errorMessage))
-        return updateCommentResult ?: error("updateCommentResult not set")
+        return updateCommentResult ?: Result.success(Unit)
     }
 
     override suspend fun deleteComment(id: String): Result<Unit> {

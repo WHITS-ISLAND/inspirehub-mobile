@@ -335,9 +335,8 @@ class DetailViewModel(
             val result = commentRepository.updateComment(commentId, text)
 
             if (result.isSuccess) {
-                val updated = result.getOrNull()!!
                 _comments.value = _comments.value.map {
-                    if (it.id == commentId) updated else it
+                    if (it.id == commentId) it.copy(content = text) else it
                 }
                 _editingCommentId.value = null
                 _editCommentText.value = ""

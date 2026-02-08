@@ -470,8 +470,7 @@ class DetailViewModelTest : MainDispatcherRule() {
         viewModel.startEditingComment(comment = targetComment)
         viewModel.updateEditCommentText(text = "更新後のコメント")
 
-        val updatedComment = targetComment.copy(content = "更新後のコメント")
-        fakeCommentRepository.updateCommentResult = Result.success(updatedComment)
+        fakeCommentRepository.updateCommentResult = Result.success(Unit)
 
         viewModel.saveCommentEdit()
 

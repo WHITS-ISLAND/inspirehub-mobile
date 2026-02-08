@@ -37,7 +37,7 @@ interface CommentRepository {
      * @param id コメントID
      * @param content 更新後のコメント内容
      */
-    suspend fun updateComment(id: String, content: String): Result<Comment>
+    suspend fun updateComment(id: String, content: String): Result<Unit>
 
     /**
      * コメントを削除

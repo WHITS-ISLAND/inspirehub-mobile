@@ -39,10 +39,10 @@ class CommentRepositoryImpl(
         }
     }
 
-    override suspend fun updateComment(id: String, content: String): Result<Comment> {
+    override suspend fun updateComment(id: String, content: String): Result<Unit> {
         return try {
-            val dto = dataSource.updateComment(id, content)
-            Result.success(dto.toDomain())
+            dataSource.updateComment(id, content)
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
