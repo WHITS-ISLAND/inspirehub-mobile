@@ -57,7 +57,7 @@ fun LoginScreen(viewModel: AuthViewModel) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "社内ハッカソンをもっと楽しく",
+            text = "アイデアに敬意を、実現に情熱を",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
