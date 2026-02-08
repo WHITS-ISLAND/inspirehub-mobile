@@ -22,7 +22,7 @@ struct LoginView: View {
                     .font(.largeTitle)
                     .fontWeight(.bold)
 
-                Text("社内ハッカソンをもっと楽しく")
+                Text("アイデアに敬意を、実現に情熱を")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -59,12 +59,6 @@ struct LoginView: View {
                     .padding(.horizontal, 32)
                     .padding(.top, 8)
             }
-
-            Button("テスト用ログイン（DEV）") {
-                viewModel.mockLogin()
-            }
-            .font(.caption)
-            .foregroundColor(.secondary)
 
             Spacer()
         }
