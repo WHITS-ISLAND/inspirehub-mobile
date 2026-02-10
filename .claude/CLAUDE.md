@@ -243,8 +243,10 @@ struct HomeView: View {
 
 ## GitHub Actions（Issue駆動開発）
 
-GitHub IssueやPRコメントで `@claude` メンションするとClaude Codeが起動する。
-実装を依頼する場合は `@claude /implement` を使うこと（Plan作成→承認→実装→PR→TestFlight配信の一連フローが実行される）。
+GitHub IssueやPRコメントで `@claude` メンションするとClaude Codeが起動する（Collaborator以上のみ）。
+
+- **方針確認**: `@claude 対応方針を考えて` → 調査・Plan投稿（何往復でもOK）
+- **実装依頼**: `@claude /implement` → Issueコメントの文脈を読んで実装→PR→TestFlight配信
 
 ## 依存関係
 
