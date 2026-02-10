@@ -43,14 +43,45 @@ Issueの文脈（過去のコメント・Plan等）を読み取り、実装か�
 
 ### 5. PR作成
 
-- PRを作成
-- 本文に `Closes #{issue番号}` を含める
-- 変更内容のSummaryとTest planを記載
+**必ず `gh pr create` コマンドでPRを作成すること**
+
+```bash
+gh pr create \
+  --title "feat: タイトル" \
+  --body "$(cat <<'EOF'
+Closes #{issue番号}
+
+## 変更内容
+- ...
+
+## テスト
+✅ ./gradlew :shared:testDebugUnitTest - テスト結果
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+- タイトルは Conventional Commits 形式
+- 本文に `Closes #{issue番号}` を必ず含める
+- 変更内容のSummaryを記載
+- テスト結果を記載
 
 ### 6. タグpush
 
-- PR作成後、`dev/pr-{PR番号}` タグをpushする
+PR作成後、**必ず** `dev/pr-{PR番号}` タグをpushすること
+
+```bash
+# PRのURLから番号を抽出
+PR_NUMBER=$(gh pr view --json number -q .number)
+
+# タグを作成してpush
+git tag "dev/pr-${PR_NUMBER}"
+git push origin "dev/pr-${PR_NUMBER}"
+```
+
 - このタグがXcode Cloud Dev版ビルド＆TestFlight配信のトリガーになる
+- shared層の変更がなくてもタグpushは必ず行う（iOSへの影響確認のため）
 
 ## やり直し
 
