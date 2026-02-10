@@ -241,6 +241,30 @@ struct HomeView: View {
    - エージェントチームの作業効率よりも、機能単位の分割を優先する
    - 既存PRに無関係な機能を相乗りさせない
 
+## GitHub Actions（Issue駆動開発）ルール
+
+GitHub IssueからClaude Codeが起動された場合、以下のフローに従うこと。
+
+### フロー
+
+1. **Plan作成**: Issueの内容を分析し、`.claude/plans/issue-{number}.md` にPlanファイルを作成
+2. **承認待ち**: PlanをIssueコメントとして投稿し、ユーザーの承認を待つ。承認前に実装を開始しない
+3. **ブランチ作成**: 承認後、`claude/issue-{number}` ブランチを作成して実装開始
+4. **shared層テスト**: `./gradlew :shared:testDebugUnitTest` を実行し、テストが通ることを確認
+5. **PR作成**: PRを作成。本文に `Closes #{issue番号}` を含める
+6. **タグpush**: PR作成後、`dev/pr-{PR番号}` タグをpushする（Xcode Cloud Dev版ビルド＆TestFlight配信トリガー）
+7. **Planファイル削除**: 実装完了後、`.claude/plans/issue-{number}.md` を削除してコミット
+
+### ブランチ命名
+
+- `claude/issue-{number}` （例: `claude/issue-42`）
+- 1 Issue = 1 ブランチ。やり直しの場合はブランチを削除して同名で再作成
+
+### iOSビルドについて
+
+- Claude CodeはiOSビルドを実行しない（Linux上で動作するため）
+- iOSの動作確認はXcode Cloud → TestFlight配信後に人間が行う
+
 ## 依存関係
 
 主要ライブラリ（バージョンは`gradle/libs.versions.toml`参照）:
