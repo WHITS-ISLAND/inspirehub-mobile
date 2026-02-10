@@ -1,63 +1,62 @@
 ---
 name: implement
-description: GitHub IssueからPlan作成→承認→ブランチ作成→実装→PR→TestFlight配信タグまでの一連フローを実行する
+description: Issueコメントの文脈（Plan等）を読み、ブランチ作成→実装→PR→TestFlight配信タグまでを実行する
 user-invocable: true
 argument-hint: "(Issueの内容に従って実装を進める)"
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
-# /implement — Issue駆動実装スキル
+# /implement — 実装スキル
 
-GitHub IssueからClaude Codeが実装を行う際の標準フロー。
+Issueの文脈（過去のコメント・Plan等）を読み取り、実装からPR作成までを一気通貫で実行する。
+
+## 前提
+
+- **Planは事前にIssueコメントで合意済み**であること
+- Issueコメントに方針・Plan等がない場合は、自分で調査して最善の実装を行う
 
 ## フロー
 
-### 1. Plan作成
+### 1. コンテキスト把握
 
-- Issueの内容を分析し、`.claude/plans/issue-{number}.md` にPlanファイルを作成
-- Plan内容:
-  - 変更対象ファイル一覧
-  - 実装方針
-  - 影響範囲
-  - テスト方針
+- Issueの本文と全コメントを読む
+- Plan（方針コメント）があればそれに従う
+- 設計ドキュメント（`docs/design/`）やAPI仕様も必要に応じて参照
 
-### 2. 承認待ち
+### 2. ブランチ作成
 
-- PlanをIssueコメントとして投稿する
-- **承認前に実装を開始しない**
-- ユーザーから承認コメント（「OK」「LGTM」「進めて」等）があるまで待機
-
-### 3. ブランチ作成
-
-- `claude/issue-{number}` ブランチを作成して実装開始
-- 1 Issue = 1 ブランチ
+- mainから `claude/issue-{number}` ブランチを作成
 - やり直しの場合はブランチを削除して同名で再作成
 
-### 4. 実装
+### 3. 実装
 
 - CLAUDE.mdおよび `.claude/rules/` のルールに従って実装
 - コミットメッセージはConventional Commits準拠
 - コミットメッセージに `Closes #{issue番号}` を含める
 
-### 5. shared層テスト
+### 4. shared層テスト
 
 - `./gradlew :shared:testDebugUnitTest` を実行
 - テストが通ることを確認してからPR作成に進む
 
-### 6. PR作成
+### 5. PR作成
 
 - PRを作成
 - 本文に `Closes #{issue番号}` を含める
 - 変更内容のSummaryとTest planを記載
 
-### 7. タグpush
+### 6. タグpush
 
 - PR作成後、`dev/pr-{PR番号}` タグをpushする
 - このタグがXcode Cloud Dev版ビルド＆TestFlight配信のトリガーになる
 
-### 8. Planファイル削除
+## やり直し
 
-- `.claude/plans/issue-{number}.md` を削除してコミット
+ユーザーが `@claude やり直して` とコメントした場合:
+
+1. `claude/issue-{number}` ブランチを削除（remote含む）
+2. 同名ブランチをmainから再作成
+3. 最初から実装し直す
 
 ## 注意事項
 
