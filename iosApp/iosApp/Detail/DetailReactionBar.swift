@@ -4,6 +4,10 @@ import SwiftUI
 
 // MARK: - DetailReactionBar
 
+/// ノード詳細のリアクションバー
+///
+/// いいね・共感・気になる・作ってみたいの4種類のリアクションボタンと、
+/// 派生投稿ボタンを表示する。
 struct DetailReactionBar: View {
     /// 表示するノード情報
     let node: Node

@@ -4,6 +4,9 @@ import SwiftUI
 
 // MARK: - DetailHeaderSection
 
+/// ノード詳細のヘッダーセクション
+///
+/// ノードのタイトル、タイプバッジ、本文、タグ、メタ情報（作成者・作成日時）を表示する。
 struct DetailHeaderSection: View {
     /// 表示するノード情報
     let node: Node

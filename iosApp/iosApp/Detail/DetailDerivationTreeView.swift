@@ -4,6 +4,10 @@ import SwiftUI
 
 // MARK: - DetailDerivationTreeView
 
+/// ノードの派生ツリー表示
+///
+/// 現在のノードの親ノード（派生元）と子ノード（派生先）を
+/// ツリー構造で表示する。
 struct DetailDerivationTreeView: View {
     /// 親ノード情報（派生元）
     let parentNode: ParentNode?

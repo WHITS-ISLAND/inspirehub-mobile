@@ -4,6 +4,10 @@ import SwiftUI
 
 // MARK: - DetailEditView
 
+/// ノード編集画面
+///
+/// ノードのタイトルと本文を編集するためのフォームを表示する。
+/// タイプバッジは読み取り専用で表示される。
 struct DetailEditView: View {
     /// 編集するノード情報
     let node: Node

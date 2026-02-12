@@ -4,6 +4,10 @@ import SwiftUI
 
 // MARK: - DetailCommentsView
 
+/// ノード詳細のコメントセクション
+///
+/// コメント一覧の表示、コメントの編集・削除機能を提供する。
+/// 各コメントは表示モードと編集モードを切り替えられる。
 struct DetailCommentsView: View {
     /// コメント一覧
     let comments: [Comment]

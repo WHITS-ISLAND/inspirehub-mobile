@@ -6,6 +6,10 @@ import SwiftUI
 
 // MARK: - DetailView
 
+/// ノード詳細画面
+///
+/// ノードの詳細情報（タイトル、本文、タグ、リアクション、コメント、派生ツリー）を表示し、
+/// 編集・削除・派生投稿などの操作を提供する。
 struct DetailView: View {
     /// 表示するノードのID
     let nodeId: String
