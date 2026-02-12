@@ -13,6 +13,7 @@ import kotlinx.serialization.Serializable
  * @property title 派生元ノードのタイトル
  * @property content 派生元ノードの本文（省略される場合null）
  * @see ParentNode ドメインモデルへの変換先
+ * @see ParentNodeDto.toDomain 変換ロジック
  */
 @Serializable
 data class ParentNodeDto(

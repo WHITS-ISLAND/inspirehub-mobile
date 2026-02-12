@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /**
  * タグのDTO
  *
- * `GET /tags`, `GET /tags/popular` のレスポンス配列要素、および
+ * `GET /tags/popular` のレスポンス配列要素、および
  * [NodeDto.tags] の要素として使用される。
  *
  * @property id タグの一意識別子
@@ -14,6 +14,7 @@ import kotlinx.serialization.Serializable
  * @property usageCount このタグが使用されているノード数（エンドポイントによってはnull）
  * @property createdAt タグの作成日時（ISO 8601形式。[NodeDto.tags] 内では空文字の場合あり）
  * @see Tag ドメインモデルへの変換先
+ * @see TagDto.toDomain 変換ロジック
  */
 @Serializable
 data class TagDto(

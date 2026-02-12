@@ -3,7 +3,7 @@ package io.github.witsisland.inspirehub.data.dto
 import kotlinx.serialization.Serializable
 
 /**
- * `GET /tags/popular` および `GET /tags` のレスポンスDTO
+ * `GET /tags/popular` のレスポンスDTO
  *
  * タグ一覧をページネーション付きで返す。
  * `GET /tags/popular` では使用頻度の高いタグが返却される。

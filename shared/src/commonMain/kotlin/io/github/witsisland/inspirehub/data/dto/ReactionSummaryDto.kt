@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
  * @property count このリアクション種別の総数
  * @property isReacted ログインユーザーがこのリアクションを付けているかどうか
  * @see ReactionSummary ドメインモデルへの変換先
+ * @see ReactionSummaryDto.toDomain 変換ロジック
  */
 @Serializable
 data class ReactionSummaryDto(

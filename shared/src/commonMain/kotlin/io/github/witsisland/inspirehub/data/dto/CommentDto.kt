@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
  * @property createdAt 作成日時（ISO 8601形式）
  * @property updatedAt 更新日時（ISO 8601形式、未更新の場合null）
  * @see Comment ドメインモデルへの変換先
+ * @see CommentDto.toDomain 変換ロジック
  * @see MentionDto メンションユーザーのデータ構造
  */
 @Serializable

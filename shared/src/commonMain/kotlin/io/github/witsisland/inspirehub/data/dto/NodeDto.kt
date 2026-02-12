@@ -18,12 +18,12 @@ import kotlinx.serialization.Serializable
  * @property authorPicture 投稿者のプロフィール画像URL
  * @property parentNode 派生元ノード。派生アイデアの場合のみ存在
  * @property tags ノードに付与されたタグ一覧
- * @property reactions リアクション集計（いいね・共感・作ってみたい）
+ * @property reactions リアクション集計（いいね・気になる・作ってみたい）
  * @property commentCount コメント数
  * @property createdAt 作成日時（ISO 8601形式）
  * @property updatedAt 更新日時（ISO 8601形式、未更新の場合null）
  * @see Node ドメインモデルへの変換先
- * @see io.github.witsisland.inspirehub.data.mapper.NodeMapper 変換ロジック
+ * @see NodeDto.toDomain 変換ロジック
  */
 @Serializable
 data class NodeDto(

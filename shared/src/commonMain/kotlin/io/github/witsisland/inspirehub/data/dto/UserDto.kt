@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  * @property email ユーザーのメールアドレス
  * @property picture プロフィール画像URL（設定されていない場合null）
  * @see User ドメインモデルへの変換先
- * @see io.github.witsisland.inspirehub.data.mapper.UserMapper 変換ロジック
+ * @see UserDto.toDomain 変換ロジック
  */
 @Serializable
 data class UserDto(
