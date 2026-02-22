@@ -32,6 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.github.witsisland.inspirehub.presentation.viewmodel.AuthViewModel
 import io.github.witsisland.inspirehub.ui.screen.DetailScreen
+import io.github.witsisland.inspirehub.ui.screen.HomeScreen
 import kotlinx.serialization.Serializable
 
 // ---------------------------------------------------------------------------
@@ -134,7 +135,9 @@ fun MainScreen(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(BottomTab.Home.route) {
-                HomeScreenPlaceholder()
+                HomeScreen(
+                    onNodeClick = { nodeId -> navController.navigate("detail/$nodeId") },
+                )
             }
             composable(BottomTab.Discover.route) {
                 DiscoverScreenPlaceholder()
