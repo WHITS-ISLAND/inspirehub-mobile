@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// いいね・気になる・やってみたいの3種類のリアクションボタンと、
 /// 派生投稿ボタンを表示する。
-/// リアクション数をタップするとリアクションしたユーザー一覧シートを表示する。
+/// タップでリアクションしたユーザー一覧シートを表示し、長押しでリアクションを切り替える。
 struct DetailReactionBar: View {
     /// 表示するノード情報
     let node: Node
@@ -68,43 +68,35 @@ struct DetailReactionBar: View {
         isReacted: Bool,
         type: ReactionType
     ) -> some View {
-        VStack(spacing: 2) {
-            // 絵文字: タップでリアクション切り替え
-            Button(action: {
-                guard isAuthenticated else {
-                    onLoginRequired()
-                    return
-                }
-                onToggleReaction(type)
-            }) {
-                Text(emoji)
-                    .font(.title3)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(label)\(isReacted ? " リアクション済み" : "")")
+        let countLabel = count > 0 ? "\(label) \(count)" : label
 
-            // カウント: タップでユーザー一覧表示
-            if count > 0 {
-                Button(action: {
-                    onShowReactionUsers(type)
-                }) {
-                    Text("\(count)")
-                        .font(.system(size: 10))
-                        .foregroundColor(isReacted ? .blue : .secondary)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(label) \(count)人 タップでユーザー一覧を表示")
-            } else {
-                Text(label)
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary)
-            }
+        return VStack(spacing: 2) {
+            Text(emoji)
+                .font(.title3)
+            Text(countLabel)
+                .font(.system(size: 10))
+                .foregroundColor(isReacted ? .blue : .secondary)
         }
+        .frame(minWidth: 60, minHeight: 44)
+        .contentShape(Rectangle())
+        // タップ: ユーザー一覧シートを表示（count > 0 のときのみ）
+        .onTapGesture {
+            guard count > 0 else { return }
+            onShowReactionUsers(type)
+        }
+        // 長押し: リアクション切り替え
+        .onLongPressGesture {
+            guard isAuthenticated else {
+                onLoginRequired()
+                return
+            }
+            onToggleReaction(type)
+        }
+        .accessibilityLabel(
+            count > 0
+                ? "\(countLabel) タップでユーザー一覧 長押しでリアクション\(isReacted ? "解除" : "追加")"
+                : "\(label) 長押しでリアクション追加"
+        )
     }
 
     // MARK: - Derive Button
