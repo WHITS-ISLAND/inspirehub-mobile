@@ -9,16 +9,25 @@ import SwiftUI
 /// リアクションユーザー一覧画面
 ///
 /// 指定されたノードのリアクション種別に対してリアクションしたユーザーの一覧を表示する。
+/// セグメントコントロールでいいね・気になる・やってみたいを切り替えられる。
 /// カーソルベースのページネーションで無限スクロールをサポートする。
 struct ReactionUsersView: View {
     /// 表示するノードのID
     let nodeId: String
-    /// 表示するリアクション種別
-    let reactionType: ReactionType
+    /// 選択中のリアクション種別
+    @State private var selectedType: ReactionType
     /// 画面を閉じる
     @Environment(\.dismiss) private var dismiss
     /// リアクションユーザー一覧のViewModel
     @StateViewModel var viewModel = KoinHelper().getReactionUsersViewModel()
+
+    /// リアクション種別の選択肢（固定順）
+    private let allTypes: [ReactionType] = [.like, .interested, .wantToTry]
+
+    init(nodeId: String, reactionType: ReactionType) {
+        self.nodeId = nodeId
+        _selectedType = State(initialValue: reactionType)
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,22 +51,38 @@ struct ReactionUsersView: View {
                         dismiss()
                     }
                 }
+                ToolbarItem(placement: .principal) {
+                    typePicker
+                }
             }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .onAppear {
-            viewModel.loadUsers(nodeId: nodeId, type: reactionType)
+            viewModel.loadUsers(nodeId: nodeId, type: selectedType)
         }
+        .onChange(of: selectedType) { _, newType in
+            viewModel.loadUsers(nodeId: nodeId, type: newType)
+        }
+    }
+
+    // MARK: - Type Picker
+
+    private var typePicker: some View {
+        Picker("リアクション種別", selection: $selectedType) {
+            ForEach(allTypes, id: \.self) { type in
+                Text(type.emoji).tag(type)
+            }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
     }
 
     // MARK: - Navigation Title
 
     private var navigationTitle: String {
-        let emoji = reactionType.emoji
-        let label = reactionType.label
         let total = viewModel.total
-        return total > 0 ? "\(emoji) \(label) \(total)人" : "\(emoji) \(label)"
+        return total > 0 ? "\(selectedType.label) \(total)人" : selectedType.label
     }
 
     // MARK: - User List
@@ -89,7 +114,7 @@ struct ReactionUsersView: View {
 
     private var emptyView: some View {
         VStack(spacing: 12) {
-            Text(reactionType.emoji)
+            Text(selectedType.emoji)
                 .font(.system(size: 48))
             Text("まだリアクションがありません")
                 .font(.subheadline)
@@ -110,7 +135,7 @@ struct ReactionUsersView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             Button("再読み込み") {
-                viewModel.loadUsers(nodeId: nodeId, type: reactionType)
+                viewModel.loadUsers(nodeId: nodeId, type: selectedType)
             }
             .buttonStyle(.bordered)
         }
@@ -155,7 +180,6 @@ private struct ReactedUserRow: View {
             display.locale = Locale(identifier: "ja_JP")
             return display.localizedString(for: date, relativeTo: Date())
         }
-        // fractionalSecondsなしでも試す
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: isoString) {
             let display = RelativeDateTimeFormatter()
