@@ -44,6 +44,8 @@ struct ReactionUsersView: View {
                 }
             }
         }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
         .onAppear {
             viewModel.loadUsers(nodeId: nodeId, type: reactionType)
         }
