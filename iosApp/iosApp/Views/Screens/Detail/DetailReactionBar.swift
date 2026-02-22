@@ -69,23 +69,21 @@ struct DetailReactionBar: View {
         type: ReactionType
     ) -> some View {
         return VStack(spacing: 4) {
-            // チップ: 絵文字 + カウント（count > 0 のときのみ表示）
-            if count > 0 {
-                HStack(spacing: 2) {
-                    Text(emoji)
-                        .font(.caption)
+            // チップ: 絵文字（+ カウント）を常にカプセル表示
+            HStack(spacing: 2) {
+                Text(emoji)
+                    .font(.caption)
+                if count > 0 {
                     Text("\(count)")
                         .font(.caption.bold())
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .foregroundColor(isReacted ? .blue : .secondary)
-                .background(isReacted ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
-                .clipShape(Capsule())
-            } else {
-                Text(emoji)
-                    .font(.title3)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .foregroundColor(isReacted ? .blue : .secondary)
+            .background(isReacted ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
+            .clipShape(Capsule())
+
             Text(label)
                 .font(.system(size: 10))
                 .foregroundColor(isReacted ? .blue : .secondary)
