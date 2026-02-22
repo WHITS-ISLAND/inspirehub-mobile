@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// いいね・気になる・やってみたいの3種類のリアクションボタンと、
 /// 派生投稿ボタンを表示する。
-/// タップでリアクションしたユーザー一覧シートを表示し、長押しでリアクションを切り替える。
+/// タップでリアクションを切り替え、長押しでリアクションしたユーザー一覧シートを表示する。
 struct DetailReactionBar: View {
     /// 表示するノード情報
     let node: Node
@@ -79,23 +79,23 @@ struct DetailReactionBar: View {
         }
         .frame(minWidth: 60, minHeight: 44)
         .contentShape(Rectangle())
-        // タップ: ユーザー一覧シートを表示（count > 0 のときのみ）
+        // タップ: リアクション切り替え
         .onTapGesture {
-            guard count > 0 else { return }
-            onShowReactionUsers(type)
-        }
-        // 長押し: リアクション切り替え
-        .onLongPressGesture {
             guard isAuthenticated else {
                 onLoginRequired()
                 return
             }
             onToggleReaction(type)
         }
+        // 長押し: ユーザー一覧シートを表示（count > 0 のときのみ）
+        .onLongPressGesture {
+            guard count > 0 else { return }
+            onShowReactionUsers(type)
+        }
         .accessibilityLabel(
             count > 0
-                ? "\(countLabel) タップでユーザー一覧 長押しでリアクション\(isReacted ? "解除" : "追加")"
-                : "\(label) 長押しでリアクション追加"
+                ? "\(countLabel) 長押しでユーザー一覧を表示"
+                : "\(label) タップでリアクション追加"
         )
     }
 
