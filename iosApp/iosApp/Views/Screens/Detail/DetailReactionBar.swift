@@ -22,12 +22,17 @@ struct DetailReactionBar: View {
     let onShowReactionUsers: (ReactionType) -> Void
     /// 派生投稿シート表示フラグ
     @State private var showDerivedPost = false
+    /// タップアニメーション中のリアクション種別
+    @State private var animatingType: ReactionType? = nil
+    /// 触覚フィードバックのトリガー
+    @State private var hapticTrigger = false
 
     var body: some View {
         VStack(spacing: 12) {
             reactionButtons
             deriveButton
         }
+        .sensoryFeedback(.impact(flexibility: .soft, intensity: 0.7), trigger: hapticTrigger)
     }
 
     // MARK: - Reaction Buttons
@@ -83,20 +88,34 @@ struct DetailReactionBar: View {
             .foregroundColor(isReacted ? .blue : .secondary)
             .background(isReacted ? Color.blue.opacity(0.12) : Color.secondary.opacity(0.1))
             .clipShape(Capsule())
+            .animation(.easeInOut(duration: 0.2), value: isReacted)
 
             Text(label)
                 .font(.system(size: 10))
                 .foregroundColor(isReacted ? .blue : .secondary)
+                .animation(.easeInOut(duration: 0.2), value: isReacted)
         }
         .frame(minWidth: 60, minHeight: 44)
         .contentShape(Rectangle())
+        .scaleEffect(animatingType == type ? 1.25 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: animatingType == type)
         // タップ: リアクション切り替え
         .onTapGesture {
             guard isAuthenticated else {
                 onLoginRequired()
                 return
             }
+            hapticTrigger.toggle()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                animatingType = type
+            }
             onToggleReaction(type)
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(300))
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                    animatingType = nil
+                }
+            }
         }
         // 長押し: ユーザー一覧シートを表示（count > 0 のときのみ）
         .onLongPressGesture {
