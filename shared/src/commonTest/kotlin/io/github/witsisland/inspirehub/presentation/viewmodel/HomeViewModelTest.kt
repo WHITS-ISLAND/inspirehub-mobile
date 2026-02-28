@@ -75,7 +75,8 @@ class HomeViewModelTest : MainDispatcherRule() {
         fakeReactionRepository = FakeReactionRepository()
         nodeStore = NodeStore()
         userStore = UserStore()
-        viewModel = HomeViewModel(nodeStore, fakeNodeRepository, fakeReactionRepository, userStore)
+        // pageSize=2 でページネーションを検証しやすくする
+        viewModel = HomeViewModel(nodeStore, fakeNodeRepository, fakeReactionRepository, userStore, pageSize = 2)
     }
 
     @AfterTest
@@ -276,5 +277,97 @@ class HomeViewModelTest : MainDispatcherRule() {
         assertEquals(SortOrder.RECENT, viewModel.sortOrder.value)
         assertFalse(viewModel.isLoading.value)
         assertNull(viewModel.error.value)
+    }
+
+    // MARK: - Pagination
+
+    @Test
+    fun `loadNodes - 取得件数がpageSizeと同じときhasMoreがtrueになること`() = runTest {
+        // pageSize=2 で sampleNodes.take(2) を返す → 2 >= 2 → hasMore=true
+        fakeNodeRepository.getNodesResult = Result.success(sampleNodes.take(2))
+
+        viewModel.loadNodes()
+
+        assertTrue(viewModel.hasMore.value)
+    }
+
+    @Test
+    fun `loadNodes - 取得件数がpageSizeより少ないときhasMoreがfalseになること`() = runTest {
+        // 1件だけ → 1 >= 2 は false → hasMore=false
+        fakeNodeRepository.getNodesResult = Result.success(sampleNodes.take(1))
+
+        viewModel.loadNodes()
+
+        assertFalse(viewModel.hasMore.value)
+    }
+
+    @Test
+    fun `loadMore - 次のページが追加されること`() = runTest {
+        val page1 = sampleNodes.take(2)   // 2件 → hasMore=true
+        val page2 = sampleNodes.takeLast(1)  // 1件 → hasMore=false
+        fakeNodeRepository.getNodesResults.addAll(listOf(
+            Result.success(page1),
+            Result.success(page2)
+        ))
+
+        viewModel.loadNodes()
+        assertEquals(2, viewModel.nodes.value.size)
+        assertTrue(viewModel.hasMore.value)
+
+        viewModel.loadMore()
+
+        assertEquals(3, viewModel.nodes.value.size)
+        assertFalse(viewModel.hasMore.value)
+        assertEquals(2, fakeNodeRepository.getNodesCallCount)
+        assertFalse(viewModel.isLoadingMore.value)
+    }
+
+    @Test
+    fun `loadMore - hasMoreがfalseのとき追加読み込みしないこと`() = runTest {
+        // 1件だけ → hasMore=false
+        fakeNodeRepository.getNodesResult = Result.success(sampleNodes.take(1))
+        viewModel.loadNodes()
+        assertFalse(viewModel.hasMore.value)
+
+        viewModel.loadMore()
+
+        // hasMore=false なので getNodes は loadNodes() の1回だけ
+        assertEquals(1, fakeNodeRepository.getNodesCallCount)
+    }
+
+    @Test
+    fun `loadMore - 失敗時にエラーが設定されノードが保持されること`() = runTest {
+        val page1 = sampleNodes.take(2)
+        fakeNodeRepository.getNodesResults.addAll(listOf(
+            Result.success(page1),
+            Result.failure(Exception("Load more failed"))
+        ))
+
+        viewModel.loadNodes()
+        viewModel.loadMore()
+
+        assertEquals("Load more failed", viewModel.error.value)
+        assertFalse(viewModel.isLoadingMore.value)
+        // 既存のノードは保持されている
+        assertEquals(2, viewModel.nodes.value.size)
+    }
+
+    @Test
+    fun `loadNodes - リフレッシュ時にoffsetがリセットされること`() = runTest {
+        val page1 = sampleNodes.take(2)
+        val page2 = sampleNodes.takeLast(1)
+        val refreshed = sampleNodes.take(1)
+        fakeNodeRepository.getNodesResults.addAll(listOf(
+            Result.success(page1),
+            Result.success(page2),
+            Result.success(refreshed)
+        ))
+
+        viewModel.loadNodes()  // page1
+        viewModel.loadMore()   // page2: 3件
+        viewModel.refresh()    // リフレッシュ: refreshed(1件)のみ
+
+        assertEquals(1, viewModel.nodes.value.size)
+        assertFalse(viewModel.hasMore.value)
     }
 }

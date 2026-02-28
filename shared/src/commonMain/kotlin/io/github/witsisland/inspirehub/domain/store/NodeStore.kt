@@ -37,6 +37,11 @@ class NodeStore {
         _nodes.value = nodes
     }
 
+    /** 既存ノードリストにノードを末尾追加する（ページネーション用） */
+    fun appendNodes(nodes: List<Node>) {
+        _nodes.value = _nodes.value + nodes
+    }
+
     fun addNode(node: Node) {
         _nodes.value = listOf(node) + _nodes.value
     }

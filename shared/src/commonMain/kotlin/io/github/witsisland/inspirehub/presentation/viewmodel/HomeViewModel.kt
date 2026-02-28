@@ -23,7 +23,8 @@ class HomeViewModel(
     private val nodeStore: NodeStore,
     private val nodeRepository: NodeRepository,
     private val reactionRepository: ReactionRepository,
-    private val userStore: UserStore
+    private val userStore: UserStore,
+    private val pageSize: Int = 20
 ) : ViewModel() {
 
     private val _nodes = MutableStateFlow<List<Node>>(viewModelScope, emptyList())
@@ -59,6 +60,19 @@ class HomeViewModel(
     @NativeCoroutinesState
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _hasMore = MutableStateFlow(viewModelScope, true)
+    /** 追加ページが存在するか */
+    @NativeCoroutinesState
+    val hasMore: StateFlow<Boolean> = _hasMore.asStateFlow()
+
+    private val _isLoadingMore = MutableStateFlow(viewModelScope, false)
+    /** 追加ページ読み込み中か */
+    @NativeCoroutinesState
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
+    /** 現在のページングオフセット */
+    private var currentOffset: Int = 0
+
     /** 前回ノードをロードした時刻（epochMillis） */
     private var lastLoadedAt: Long = 0L
 
@@ -77,10 +91,14 @@ class HomeViewModel(
         viewModelScope.launch {
             nodeStore.setLoading(true)
             _error.value = null
+            currentOffset = 0
 
-            val result = nodeRepository.getNodes()
+            val result = nodeRepository.getNodes(limit = pageSize, offset = 0)
             if (result.isSuccess) {
-                nodeStore.updateNodes(result.getOrThrow())
+                val fetched = result.getOrThrow()
+                nodeStore.updateNodes(fetched)
+                currentOffset = fetched.size
+                _hasMore.value = fetched.size >= pageSize
                 lastLoadedAt = Clock.System.now().toEpochMilliseconds()
             } else {
                 _error.value = result.exceptionOrNull()?.message ?: "Failed to load nodes"
@@ -88,6 +106,27 @@ class HomeViewModel(
 
             applyFilter()
             nodeStore.setLoading(false)
+        }
+    }
+
+    /** リスト末尾に達したとき次のページを追加読み込みする */
+    fun loadMore() {
+        if (_isLoadingMore.value || !_hasMore.value) return
+        viewModelScope.launch {
+            _isLoadingMore.value = true
+
+            val result = nodeRepository.getNodes(limit = pageSize, offset = currentOffset)
+            if (result.isSuccess) {
+                val fetched = result.getOrThrow()
+                nodeStore.appendNodes(fetched)
+                currentOffset += fetched.size
+                _hasMore.value = fetched.size >= pageSize
+            } else {
+                _error.value = result.exceptionOrNull()?.message ?: "Failed to load more nodes"
+            }
+
+            applyFilter()
+            _isLoadingMore.value = false
         }
     }
 
@@ -128,5 +167,7 @@ class HomeViewModel(
     companion object {
         /** 30秒間はキャッシュを使い、超えたらリフレッシュ */
         private const val STALE_THRESHOLD_MS = 30_000L
+        /** 1ページあたりの取得件数 */
+        private const val PAGE_SIZE = 20
     }
 }
