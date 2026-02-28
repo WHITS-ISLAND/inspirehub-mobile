@@ -169,12 +169,32 @@ struct HomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                loadMoreFooter
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
         }
         .refreshable {
             viewModel.refresh()
+        }
+    }
+
+    /// リスト末尾のロードインジケーター / トリガー
+    @ViewBuilder
+    private var loadMoreFooter: some View {
+        if viewModel.hasMore == true {
+            if viewModel.isLoadingMore == true {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 8)
+            } else {
+                Color.clear
+                    .frame(height: 1)
+                    .onAppear {
+                        viewModel.loadMore()
+                    }
+            }
         }
     }
 

@@ -10,6 +10,8 @@ class FakeNodeRepository : NodeRepository {
     var nodes: MutableList<Node> = mutableListOf()
 
     var getNodesResult: Result<List<Node>>? = null
+    /** 複数回呼び出し時に順番に返す結果キュー（空なら getNodesResult にフォールバック） */
+    var getNodesResults: ArrayDeque<Result<List<Node>>> = ArrayDeque()
     var getNodeResult: Result<Node>? = null
     var createNodeResult: Result<Node>? = null
     var updateNodeResult: Result<Node>? = null
@@ -62,6 +64,7 @@ class FakeNodeRepository : NodeRepository {
         lastGetNodesOffset = offset
 
         if (shouldReturnError) return Result.failure(Exception(errorMessage))
+        if (getNodesResults.isNotEmpty()) return getNodesResults.removeFirst()
         return getNodesResult ?: Result.success(nodes.toList())
     }
 
@@ -167,6 +170,7 @@ class FakeNodeRepository : NodeRepository {
     fun reset() {
         nodes.clear()
         getNodesResult = null
+        getNodesResults.clear()
         getNodeResult = null
         createNodeResult = null
         updateNodeResult = null

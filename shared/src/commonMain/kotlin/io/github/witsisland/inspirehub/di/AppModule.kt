@@ -84,7 +84,7 @@ val appModule = module {
 
     // ViewModel（Factory - 画面ごとに生成）
     factoryOf(::AuthViewModel)
-    factoryOf(::HomeViewModel)
+    factory { HomeViewModel(get(), get(), get(), get()) }
     factoryOf(::MapViewModel)
     factoryOf(::MyPageViewModel)
     factoryOf(::PostViewModel)

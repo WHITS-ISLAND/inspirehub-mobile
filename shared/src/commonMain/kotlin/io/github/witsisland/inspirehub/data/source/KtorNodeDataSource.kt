@@ -129,14 +129,19 @@ class KtorNodeDataSource(
         return response.nodes
     }
 
+    /**
+     * GET /nodes?reacted=true
+     * Response: { "nodes": [NodeDto], "total": number }
+     */
     override suspend fun getReactedNodes(
         limit: Int,
         offset: Int
     ): List<NodeDto> {
-        return httpClient.get("/nodes") {
+        val response: NodesResponseDto = httpClient.get("/nodes") {
             parameter("reacted", true)
             parameter("limit", limit)
             parameter("offset", offset)
         }.body()
+        return response.nodes
     }
 }
